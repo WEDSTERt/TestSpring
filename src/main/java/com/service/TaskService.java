@@ -43,6 +43,7 @@ public class TaskService {
         return taskRepository.save(task);
     }
 
+
     @Transactional
     public Task updateTask(Long id, Long subgroupId, String title, String description,
                            OffsetDateTime dueDate, Integer value, TaskStatus status) {
