@@ -17,8 +17,9 @@ const Layout = ({ children }) => {
                 <div className="logo">📋 Kanban Docky</div>
                 <div className="nav-links">
                     <Link to="/">📁 Проекты</Link>
-                    <Link to="/account">⚙️ Аккаунт</Link>
-                    <span className="user-info">👤 {user?.fullName}</span>
+                    <span className="user-info" onClick={() => navigate('/account')} style={{ cursor: 'pointer' }}>
+            👤 {user?.fullName}
+          </span>
                     <button className="secondary small" onClick={handleLogout}>
                         Выйти
                     </button>
