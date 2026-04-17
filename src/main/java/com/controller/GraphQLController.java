@@ -152,8 +152,9 @@ public class GraphQLController {
 
     @MutationMapping
     public Subgroup createSubgroup(@Argument Long projectId,
-                                   @Argument String name) {
-        return subgroupService.createSubgroup(projectId, name);
+                                   @Argument String name,
+                                   @Argument Long creatorUserId) {
+        return subgroupService.createSubgroup(projectId, name, creatorUserId);
     }
 
     @MutationMapping

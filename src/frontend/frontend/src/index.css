@@ -481,17 +481,25 @@ input:focus, select:focus, textarea:focus {
 }
 
 .group-settings-btn {
-  background: none;
-  border: none;
-  cursor: pointer;
-  opacity: 0.5;
-  padding: 4px;
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  border-radius: 30px;
+  padding: 4px 8px;
+  color: #334155;
+  transition: all 0.2s;
 }
-
+.warning-message {
+  background: #fef3c7;
+  color: #92400e;
+  padding: 12px;
+  border-radius: 12px;
+  font-size: 0.85rem;
+}
 .group-settings-btn:hover {
-  opacity: 1;
+  background: #2563eb;
+  border-color: #2563eb;
+  color: white;
 }
-
 /* Канбан доска – без горизонтального скролла */
 .kanban-layout {
   display: flex;

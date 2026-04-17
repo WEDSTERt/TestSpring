@@ -26,11 +26,20 @@ public class SubgroupService {
     }
 
     @Transactional
-    public Subgroup createSubgroup(Long projectId, String name) {
+    public Subgroup createSubgroup(Long projectId, String name, Long creatorUserId) {
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new RuntimeException("Project not found"));
+        // Проверка уникальности имени
+        boolean exists = subgroupRepository.findByProjectId(projectId)
+                .stream()
+                .anyMatch(s -> s.getName().equalsIgnoreCase(name));
+        if (exists) {
+            throw new RuntimeException("Subgroup with this name already exists in the project");
+        }
         Subgroup subgroup = new Subgroup(name, project);
-        return subgroupRepository.save(subgroup);
+        subgroup = subgroupRepository.save(subgroup);
+        addSubgroupMember(subgroup.getId(), creatorUserId, RoleSubgroup.LEADER);
+        return subgroup;
     }
 
     @Transactional
@@ -55,7 +64,8 @@ public class SubgroupService {
     }
 
     public List<Subgroup> findSubgroupsByProject(Long projectId) {
-        return subgroupRepository.findByProjectId(projectId);
+        // Используем метод с JOIN FETCH, чтобы загрузить members
+        return subgroupRepository.findByProjectIdWithMembers(projectId);
     }
 
     @Transactional

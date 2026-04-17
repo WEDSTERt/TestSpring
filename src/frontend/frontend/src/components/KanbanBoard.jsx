@@ -17,8 +17,10 @@ const KanbanBoard = () => {
     const [showTaskModal, setShowTaskModal] = useState(false);
     const [editingTask, setEditingTask] = useState(null);
     const [deleteConfirm, setDeleteConfirm] = useState({ isOpen: false, taskId: null });
+    const [initialAssigneeIds, setInitialAssigneeIds] = useState([]);
 
-    const { loading: projectLoading, data: projectData } = useQuery(GET_PROJECT_DETAILS, {
+    // ----- ЗАПРОСЫ -----
+    const { loading: projectLoading, data: projectData, refetch: refetchProject } = useQuery(GET_PROJECT_DETAILS, {
         variables: { projectId },
     });
 
@@ -32,19 +34,22 @@ const KanbanBoard = () => {
         skip: activeSubgroupId !== 'my-tasks',
     });
 
+    // ----- МУТАЦИИ -----
     const [createTask] = useMutation(CREATE_TASK);
     const [updateTask] = useMutation(UPDATE_TASK);
     const [deleteTask] = useMutation(DELETE_TASK);
     const [setTaskAssignees] = useMutation(SET_TASK_ASSIGNEES);
 
-    // Устанавливаем активную группу "Мои задачи" по умолчанию (при первом рендере)
-    useEffect(() => {
-        if (activeSubgroupId === null) {
-            setActiveSubgroupId('my-tasks');
+    // ----- ВСПОМОГАТЕЛЬНАЯ ФУНКЦИЯ -----
+    const refetchCurrentTasks = () => {
+        if (activeSubgroupId === 'my-tasks') {
+            refetchMyTasks();
+        } else if (activeSubgroupId) {
+            refetchTasks();
         }
-    }, []); // Пустой массив – выполняется только один раз
+    };
 
-    // Вычисляем видимые подгруппы (для панели и для создания задач)
+    // ----- ВЫЧИСЛЯЕМ ВИДИМЫЕ ПОДГРУППЫ -----
     const visibleSubgroups = useMemo(() => {
         if (!projectData?.project) return [];
         const realSubgroups = projectData.project.subgroups || [];
@@ -56,7 +61,14 @@ const KanbanBoard = () => {
         return realSubgroups.filter(group => group.members?.some(m => m.userId === user.id));
     }, [projectData, user.id]);
 
-    // Ранние возвраты после всех хуков
+    // ----- УСТАНАВЛИВАЕМ АКТИВНУЮ ГРУППУ ПО УМОЛЧАНИЮ -----
+    useEffect(() => {
+        if (activeSubgroupId === null) {
+            setActiveSubgroupId('my-tasks');
+        }
+    }, []);
+
+    // ----- РАННИЕ ВОЗВРАТЫ -----
     if (projectLoading) return <div>Загрузка проекта...</div>;
     if (!projectData?.project) return <div className="error">Проект не найден</div>;
 
@@ -67,13 +79,17 @@ const KanbanBoard = () => {
     const realSubgroups = project.subgroups || [];
     const projectMembers = project.members || [];
 
+    // ----- ЗАДАЧИ -----
     let tasks = [];
     if (activeSubgroupId === 'my-tasks') {
-        tasks = myTasksData?.tasksByAssignee || [];
+        const allTasks = myTasksData?.tasksByAssignee || [];
+        const currentSubgroupIds = new Set(realSubgroups.map(g => g.id));
+        tasks = allTasks.filter(task => currentSubgroupIds.has(task.subgroupId));
     } else if (activeSubgroupId) {
         tasks = tasksData?.tasksBySubgroup || [];
     }
 
+    // ----- НОРМАЛИЗАЦИЯ СТАТУСА -----
     const normalizeStatus = (status) => {
         if (status === undefined || status === null) return 'TODO';
         if (typeof status === 'number') {
@@ -98,26 +114,40 @@ const KanbanBoard = () => {
         REVIEW: tasks.filter(t => normalizeStatus(t.status) === 'REVIEW'),
     };
 
+    // ----- УЧАСТНИКИ ТЕКУЩЕЙ ПОДГРУППЫ ДЛЯ ВЫБОРА ИСПОЛНИТЕЛЕЙ -----
+    let targetSubgroupForAssign = null;
+    if (activeSubgroupId && activeSubgroupId !== 'my-tasks') {
+        targetSubgroupForAssign = realSubgroups.find(g => g.id === activeSubgroupId);
+    } else if (activeSubgroupId === 'my-tasks' && realSubgroups.length > 0) {
+        targetSubgroupForAssign = realSubgroups[0];
+    }
+    const assignableUsers = targetSubgroupForAssign?.members || [];
+
+    // ----- ОБРАБОТЧИКИ -----
     const handleCreateTask = () => {
         if (!activeSubgroupId) {
             alert('Сначала выберите группу');
             return;
         }
         setEditingTask(null);
+        let ids = [];
+        if (activeSubgroupId === 'my-tasks') {
+            ids = [user.id];
+        } else {
+            const targetGroup = realSubgroups.find(g => g.id === activeSubgroupId);
+            if (targetGroup && targetGroup.members) {
+                ids = targetGroup.members
+                    .filter(m => m.role === 'LEADER')
+                    .map(m => m.userId);
+            }
+        }
+        setInitialAssigneeIds(ids);
         setShowTaskModal(true);
     };
 
     const handleEditTask = (task) => {
         setEditingTask(task);
         setShowTaskModal(true);
-    };
-
-    const refetchCurrentTasks = () => {
-        if (activeSubgroupId === 'my-tasks') {
-            refetchMyTasks();
-        } else if (activeSubgroupId) {
-            refetchTasks();
-        }
     };
 
     const handleSaveTask = async (taskData) => {
@@ -175,6 +205,7 @@ const KanbanBoard = () => {
         setDeleteConfirm({ isOpen: false, taskId: null });
     };
 
+    // ----- DRAG & DROP -----
     const handleDragStart = (e, taskId, fromStatus) => {
         e.dataTransfer.setData('taskId', taskId);
         e.dataTransfer.setData('fromStatus', fromStatus);
@@ -201,6 +232,7 @@ const KanbanBoard = () => {
                 onSelectSubgroup={setActiveSubgroupId}
                 isOwner={isOwner}
                 projectMembers={projectMembers}
+                onRefreshProject={refetchProject}
             />
             <div className="kanban-container">
                 <div className="kanban-header">
@@ -246,7 +278,8 @@ const KanbanBoard = () => {
                 <TaskModal
                     task={editingTask}
                     subgroupId={activeSubgroupId}
-                    projectMembers={projectMembers}
+                    assignableUsers={assignableUsers}
+                    initialAssigneeIds={initialAssigneeIds}
                     onSave={handleSaveTask}
                     onClose={() => setShowTaskModal(false)}
                 />

@@ -7,7 +7,7 @@ import SubgroupSettingsModal from './SubgroupSettingsModal';
 import CreateSubgroupModal from './CreateSubgroupModal';
 import ConfirmModal from './ConfirmModal';
 
-const SubgroupsPanel = ({ projectId, activeSubgroupId, onSelectSubgroup, isOwner, projectMembers }) => {
+const SubgroupsPanel = ({ projectId, activeSubgroupId, onSelectSubgroup, isOwner, projectMembers, onRefreshProject }) => {
     const { user } = useAuth();
     const [showSettingsFor, setShowSettingsFor] = useState(null);
     const [showCreateModal, setShowCreateModal] = useState(false);
@@ -23,8 +23,6 @@ const SubgroupsPanel = ({ projectId, activeSubgroupId, onSelectSubgroup, isOwner
     if (error) return <div className="error">{error.message}</div>;
 
     const allSubgroups = data?.subgroupsByProject || [];
-
-    // Безопасное определение прав администратора
     const isAdmin = projectMembers?.some(m => m.userId === user.id && (m.role === 'ADMIN' || m.role === 'OWNER')) || false;
     const visibleSubgroups = (isOwner || isAdmin)
         ? allSubgroups
@@ -63,7 +61,7 @@ const SubgroupsPanel = ({ projectId, activeSubgroupId, onSelectSubgroup, isOwner
                     <li key={group.id} className={`group-item ${activeSubgroupId === group.id ? 'active' : ''}`} onClick={() => onSelectSubgroup(group.id)}>
                         <i className="fas fa-folder"></i> <span>{group.name}</span>
                         {canManageGroup(group) && (
-                            <button className="group-settings-btn" onClick={(e) => { e.stopPropagation(); setShowSettingsFor(group); }}><i className="fas fa-cog"></i></button>
+                            <button className="group-settings-btn" onClick={(e) => { e.stopPropagation(); setShowSettingsFor(group); }}>⚙️</button>
                         )}
                     </li>
                 ))}
@@ -74,12 +72,21 @@ const SubgroupsPanel = ({ projectId, activeSubgroupId, onSelectSubgroup, isOwner
                     projectId={projectId}
                     isOwner={isOwner}
                     onClose={() => setShowSettingsFor(null)}
-                    onUpdate={() => { refetch(); onSelectSubgroup(showSettingsFor.id); }}
+                    onUpdate={() => {
+                        refetch();
+                        onSelectSubgroup(showSettingsFor.id);
+                        if (onRefreshProject) onRefreshProject();
+                    }}
                     onDelete={() => handleDeleteGroup(showSettingsFor.id)}
                 />
             )}
             {showCreateModal && (
-                <CreateSubgroupModal projectId={projectId} onClose={() => setShowCreateModal(false)} onCreated={() => refetch()} />
+                <CreateSubgroupModal
+                    projectId={projectId}
+                    existingSubgroups={allSubgroups}
+                    onClose={() => setShowCreateModal(false)}
+                    onCreated={() => refetch()}
+                />
             )}
             <ConfirmModal
                 isOpen={deleteConfirm.isOpen}

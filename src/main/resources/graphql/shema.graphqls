@@ -132,7 +132,7 @@ type Mutation {
     removeProjectMember(id: ID!): Boolean!
 
     # ----- ПОДГРУППЫ (КОЛОНКИ) -----
-    createSubgroup(projectId: ID!, name: String!): Subgroup!
+    createSubgroup(projectId: ID!, name: String!, creatorUserId: ID!): Subgroup!
     updateSubgroup(id: ID!, name: String): Subgroup!
     deleteSubgroup(id: ID!): Boolean!
 

@@ -42,6 +42,12 @@ export const GET_PROJECT_DETAILS = gql`
             subgroups {
                 id
                 name
+                members {
+                    id
+                    userId
+                    role
+                    user { id fullName email }
+                }
             }
         }
     }
@@ -107,18 +113,18 @@ export const GET_PROJECT_TASKS = gql`
 // ... существующие запросы
 
 export const GET_SUBGROUPS_BY_PROJECT = gql`
-  query GetSubgroupsByProject($projectId: ID!) {
-    subgroupsByProject(projectId: $projectId) {
-      id
-      name
-      members {
-        id
-        userId
-        role
-        user { id fullName email }
-      }
+    query GetSubgroupsByProject($projectId: ID!) {
+        subgroupsByProject(projectId: $projectId) {
+            id
+            name
+            members {
+                id
+                userId
+                role
+                user { id fullName email }
+            }
+        }
     }
-  }
 `;
 
 export const GET_TASKS_BY_SUBGROUP = gql`
@@ -145,18 +151,18 @@ export const GET_USERS = gql`
   }
 `;
 export const GET_TASKS_BY_ASSIGNEE = gql`
-  query GetTasksByAssignee($userId: ID!) {
-    tasksByAssignee(userId: $userId) {
-      id
-      title
-      description
-      dueDate
-      status
-      value
-      createdBy { id fullName }
-      assignees { id fullName }
-      subgroupId
-      subgroup { id name }
+    query GetTasksByAssignee($userId: ID!) {
+        tasksByAssignee(userId: $userId) {
+            id
+            title
+            description
+            dueDate
+            status
+            value
+            createdBy { id fullName }
+            assignees { id fullName }
+            subgroupId
+            subgroup { id name }
+        }
     }
-  }
 `;

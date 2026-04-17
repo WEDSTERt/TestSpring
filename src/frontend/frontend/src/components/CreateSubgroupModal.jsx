@@ -1,20 +1,38 @@
 import React, { useState } from 'react';
 import { useMutation } from '@apollo/client';
 import { CREATE_SUBGROUP } from '../graphql/mutations';
+import { useAuth } from '../contexts/AuthContext';
 
-const CreateSubgroupModal = ({ projectId, onClose, onCreated }) => {
+const CreateSubgroupModal = ({ projectId, existingSubgroups, onClose, onCreated }) => {
+    const { user } = useAuth();
     const [name, setName] = useState('');
-    const [createSubgroup, { loading }] = useMutation(CREATE_SUBGROUP, {
-        onCompleted: () => {
+    const [error, setError] = useState('');
+    const [createSubgroup] = useMutation(CREATE_SUBGROUP);
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setError('');
+        const trimmed = name.trim();
+        if (!trimmed) return;
+        // Проверка уникальности названия (регистронезависимо)
+        if (existingSubgroups.some(g => g.name.toLowerCase() === trimmed.toLowerCase())) {
+            setError('Группа с таким названием уже существует в этом проекте');
+            return;
+        }
+        try {
+            await createSubgroup({
+                variables: {
+                    projectId,
+                    name: trimmed,
+                    creatorUserId: user.id,
+                },
+            });
             onCreated();
             onClose();
-        },
-    });
-
-    const handleSubmit = (e) => {
-        e.preventDefault();
-        if (!name.trim()) return;
-        createSubgroup({ variables: { projectId, name } });
+        } catch (err) {
+            console.error('Ошибка создания подгруппы:', err);
+            setError(err.message);
+        }
     };
 
     return (
@@ -33,9 +51,10 @@ const CreateSubgroupModal = ({ projectId, onClose, onCreated }) => {
                             required
                         />
                     </div>
+                    {error && <div className="error">{error}</div>}
                     <div className="modal-actions">
                         <button type="button" className="secondary" onClick={onClose}>Отмена</button>
-                        <button type="submit" disabled={loading}>Создать</button>
+                        <button type="submit">Создать</button>
                     </div>
                 </form>
             </div>

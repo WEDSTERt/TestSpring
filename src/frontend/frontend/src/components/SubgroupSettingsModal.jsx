@@ -50,6 +50,7 @@ const SubgroupSettingsModal = ({ subgroup, projectId, isOwner, onClose, onUpdate
             const userInfo = projectMembers.find(m => m.userId === selectedUserId)?.user || { fullName: 'Unknown' };
             setMembers([...members, { ...newMember, user: userInfo }]);
             setSelectedUserId('');
+            onUpdate(); // Обновляем данные после добавления участника
         } catch (err) {
             console.error(err);
             alert('Ошибка добавления участника: ' + err.message);
@@ -59,6 +60,7 @@ const SubgroupSettingsModal = ({ subgroup, projectId, isOwner, onClose, onUpdate
     const handleRoleChange = async (memberId, newRole) => {
         await updateMember({ variables: { id: memberId, role: newRole } });
         setMembers(members.map(m => m.id === memberId ? { ...m, role: newRole } : m));
+        onUpdate(); // Обновляем данные после изменения роли
     };
 
     const handleRemoveMember = (memberId) => {
@@ -69,6 +71,7 @@ const SubgroupSettingsModal = ({ subgroup, projectId, isOwner, onClose, onUpdate
         await removeMember({ variables: { id: deleteConfirm.memberId } });
         setMembers(members.filter(m => m.id !== deleteConfirm.memberId));
         setDeleteConfirm({ isOpen: false, memberId: null });
+        onUpdate(); // Обновляем данные после удаления участника
     };
 
     return (

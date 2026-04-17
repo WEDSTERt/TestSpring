@@ -157,12 +157,12 @@ export const DELETE_TASK = gql`
 
 // Подгруппы
 export const CREATE_SUBGROUP = gql`
-  mutation CreateSubgroup($projectId: ID!, $name: String!) {
-    createSubgroup(projectId: $projectId, name: $name) {
-      id
-      name
+    mutation CreateSubgroup($projectId: ID!, $name: String!, $creatorUserId: ID!) {
+        createSubgroup(projectId: $projectId, name: $name, creatorUserId: $creatorUserId) {
+            id
+            name
+        }
     }
-  }
 `;
 
 export const UPDATE_SUBGROUP = gql`

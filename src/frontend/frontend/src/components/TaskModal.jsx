@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
-const TaskModal = ({ task, subgroupId, projectMembers, onSave, onClose }) => {
+const TaskModal = ({ task, subgroupId, assignableUsers, initialAssigneeIds, onSave, onClose }) => {
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
     const [dueDate, setDueDate] = useState('');
@@ -13,7 +13,6 @@ const TaskModal = ({ task, subgroupId, projectMembers, onSave, onClose }) => {
             setTitle(task.title || '');
             setDescription(task.description || '');
             setDueDate(task.dueDate || '');
-            // Нормализация статуса
             let rawStatus = task.status;
             if (typeof rawStatus === 'number') {
                 rawStatus = rawStatus === 0 ? 'TODO' : rawStatus === 1 ? 'IN_PROGRESS' : 'REVIEW';
@@ -30,9 +29,9 @@ const TaskModal = ({ task, subgroupId, projectMembers, onSave, onClose }) => {
             setDueDate('');
             setStatus('TODO');
             setPriority(2);
-            setAssigneeIds([]);
+            setAssigneeIds(initialAssigneeIds || []);
         }
-    }, [task]);
+    }, [task, initialAssigneeIds]);
 
     const handleSubmit = (e) => {
         e.preventDefault();
@@ -91,16 +90,16 @@ const TaskModal = ({ task, subgroupId, projectMembers, onSave, onClose }) => {
                         </select>
                     </div>
                     <div className="form-group">
-                        <label>Исполнители</label>
+                        <label>Исполнители (только участники текущей подгруппы)</label>
                         <div className="assignees-checkbox-list">
-                            {projectMembers.map(member => (
+                            {assignableUsers.map(member => (
                                 <label key={member.userId} className="checkbox-label">
                                     <input
                                         type="checkbox"
                                         checked={assigneeIds.includes(member.userId)}
                                         onChange={() => handleAssigneeToggle(member.userId)}
                                     />
-                                    {member.user.fullName}
+                                    {member.user?.fullName || `Пользователь ${member.userId}`}
                                 </label>
                             ))}
                         </div>
