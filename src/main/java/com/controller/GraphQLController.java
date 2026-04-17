@@ -1,11 +1,14 @@
 package com.controller;
 
 import com.entity.*;
+import com.repository.UserRepository;
 import com.service.*;
 import org.springframework.graphql.data.method.annotation.*;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Controller;
 import java.time.OffsetDateTime;
 import java.util.List;
+
 
 @Controller
 public class GraphQLController {
@@ -14,15 +17,19 @@ public class GraphQLController {
     private final ProjectService projectService;
     private final SubgroupService subgroupService;
     private final TaskService taskService;
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
     public GraphQLController(UserService userService,
                              ProjectService projectService,
                              SubgroupService subgroupService,
-                             TaskService taskService) {
+                             TaskService taskService, UserRepository userRepository, PasswordEncoder passwordEncoder) {
         this.userService = userService;
         this.projectService = projectService;
         this.subgroupService = subgroupService;
         this.taskService = taskService;
+        this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     // ---------- QUERY ----------
@@ -96,7 +103,13 @@ public class GraphQLController {
                            @Argument String password) {
         return userService.updateUser(id, fullName, email, password);
     }
-
+    @MutationMapping
+    public User login(@Argument String email, @Argument String password) {
+        User user = userRepository.findByEmail(email).orElse(null);
+        if (user == null) return null;
+        if (!passwordEncoder.matches(password, user.getUserPassword())) return null;
+        return user;
+    }
     @MutationMapping
     public boolean deleteUser(@Argument Long id) {
         return userService.deleteUser(id);
@@ -315,4 +328,5 @@ public class GraphQLController {
     public Integer taskStatus(Task task) {
         return task.getStatus();
     }
+
 }

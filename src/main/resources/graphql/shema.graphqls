@@ -1,15 +1,5 @@
 
-type Book {
-    id: ID
-    name: String
-    pageCount: Int
-    author: Author
-}
 
-type Author {
-    id: ID
-    name: String
-}
 scalar DateTime
 
 enum RoleProject {
@@ -93,13 +83,14 @@ type Task {
     updatedAt: DateTime!
     assignees: [User!]!
 }
+type AuthPayload {
+    token: String!
+    user: User!
+}
 
 # ==================== QUERIES ====================
 
 type Query {
-
-    books : [Book]
-    bookById(id: Int): Book
 
     # Пользователи
     user(id: ID!): User
@@ -128,6 +119,7 @@ type Mutation {
     createUser(fullName: String!, email: String!, password: String!): User!
     updateUser(id: ID!, fullName: String, email: String, password: String): User!
     deleteUser(id: ID!): Boolean!
+    login(email: String!, password: String!): User
 
     # ----- ПРОЕКТЫ -----
     createProject(name: String!, ownerUserId: ID!): Project!
