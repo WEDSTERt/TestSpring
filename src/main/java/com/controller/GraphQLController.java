@@ -66,7 +66,10 @@ public class GraphQLController {
     public List<Subgroup> subgroupsByProject(@Argument Long projectId) {
         return subgroupService.findSubgroupsByProject(projectId);
     }
-
+    @QueryMapping
+    public List<Attachment> taskAttachments(@Argument Long taskId) {
+        return taskService.getAttachmentsByTask(taskId);
+    }
     @QueryMapping
     public Task task(@Argument Long id) {
         return taskService.findById(id).orElse(null);

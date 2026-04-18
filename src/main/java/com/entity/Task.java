@@ -48,6 +48,9 @@ public class Task {
     @Column(name = "updated_at", insertable = false, updatable = false)
     private OffsetDateTime updatedAt;
 
+    @OneToMany(mappedBy = "task", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Attachment> attachments = new ArrayList<>();
+
     @ManyToMany
     @JoinTable(
             name = "task_assignees",
@@ -95,4 +98,6 @@ public class Task {
     public void setUpdatedAt(OffsetDateTime updatedAt) { this.updatedAt = updatedAt; }
     public List<User> getAssignees() { return assignees; }
     public void setAssignees(List<User> assignees) { this.assignees = assignees; }
+    public List<Attachment> getAttachments() { return attachments; }
+    public void setAttachments(List<Attachment> attachments) { this.attachments = attachments; }
 }

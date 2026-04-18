@@ -167,3 +167,15 @@ export const GET_TASKS_BY_ASSIGNEE = gql`
         }
     }
 `;
+export const GET_TASK_ATTACHMENTS = gql`
+  query GetTaskAttachments($taskId: ID!) {
+    taskAttachments(taskId: $taskId) {
+      id
+      fileName
+      fileType
+      fileSize
+      createdAt
+      downloadUrl
+    }
+  }
+`;

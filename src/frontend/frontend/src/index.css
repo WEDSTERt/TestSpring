@@ -708,3 +708,34 @@ fieldset {
   margin-top: 24px;
 }
 .form-actions button { flex: 1; }
+
+/* Вложения */
+.attachments-list ul {
+  list-style: none;
+  padding: 0;
+  margin: 8px 0;
+}
+.attachment-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 0;
+  border-bottom: 1px solid #e2e8f0;
+}
+.attachment-item a {
+  flex: 1;
+  text-decoration: none;
+  color: #2563eb;
+}
+.attachment-size {
+  font-size: 0.7rem;
+  color: #64748b;
+}
+.attachment-upload {
+  margin-top: 8px;
+}
+.uploading {
+  margin-left: 8px;
+  font-size: 0.8rem;
+  color: #64748b;
+}

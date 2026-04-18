@@ -87,7 +87,21 @@ type AuthPayload {
     token: String!
     user: User!
 }
+type Attachment {
+    id: ID!
+    fileName: String!
+    fileType: String
+    fileSize: Int
+    createdAt: DateTime!
+    downloadUrl: String
+}
 
+extend type Task {
+    attachments: [Attachment!]!
+}
+extend type Query {
+    taskAttachments(taskId: ID!): [Attachment!]!
+}
 # ==================== QUERIES ====================
 
 type Query {

@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
+import { useQuery } from '@apollo/client';
+import { GET_TASK_ATTACHMENTS } from '../graphql/queries';
+import AttachmentList from './AttachmentList';
 
 const TaskModal = ({ task, subgroupId, assignableUsers, initialAssigneeIds, onSave, onClose }) => {
     const [title, setTitle] = useState('');
@@ -9,7 +12,14 @@ const TaskModal = ({ task, subgroupId, assignableUsers, initialAssigneeIds, onSa
     const [status, setStatus] = useState('TODO');
     const [priority, setPriority] = useState(2);
     const [assigneeIds, setAssigneeIds] = useState([]);
-    const users = assignableUsers || []; // защита от undefined
+    const [uploading, setUploading] = useState(false);
+    const users = assignableUsers || [];
+
+    // Запрос списка вложений (только для существующей задачи)
+    const { data: attachmentsData, refetch: refetchAttachments } = useQuery(GET_TASK_ATTACHMENTS, {
+        variables: { taskId: task?.id },
+        skip: !task?.id,
+    });
 
     useEffect(() => {
         if (task) {
@@ -37,8 +47,7 @@ const TaskModal = ({ task, subgroupId, assignableUsers, initialAssigneeIds, onSa
     }, [task, initialAssigneeIds]);
 
     const setCurrentDateTime = () => {
-        const now = new Date();
-        setDueDate(now);
+        setDueDate(new Date());
     };
 
     const handleSubmit = (e) => {
@@ -69,6 +78,33 @@ const TaskModal = ({ task, subgroupId, assignableUsers, initialAssigneeIds, onSa
         setAssigneeIds(prev =>
             prev.includes(userId) ? prev.filter(id => id !== userId) : [...prev, userId]
         );
+    };
+
+    // Загрузка файла через REST
+    const handleFileUpload = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        setUploading(true);
+        const formData = new FormData();
+        formData.append('file', file);
+        try {
+            const token = localStorage.getItem('authToken');
+            const response = await fetch(`/api/files/upload/${task.id}`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': token ? `Bearer ${token}` : '',
+                },
+                body: formData,
+            });
+            if (!response.ok) throw new Error('Upload failed');
+            await refetchAttachments();
+        } catch (err) {
+            console.error(err);
+            alert('Ошибка загрузки файла');
+        } finally {
+            setUploading(false);
+            e.target.value = '';
+        }
     };
 
     const customHeader = ({ date, changeYear, changeMonth, decreaseMonth, increaseMonth, prevMonthButtonDisabled, nextMonthButtonDisabled }) => (
@@ -116,7 +152,7 @@ const TaskModal = ({ task, subgroupId, assignableUsers, initialAssigneeIds, onSa
                         />
                     </div>
                     <div className="form-group">
-                        <label className="form-label">Дедлайн (дата и время)</label>
+                        <label className="form-label" htmlFor="task-due">Дедлайн (дата и время)</label>
                         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                             <div style={{ flex: 1 }}>
                                 <DatePicker
@@ -188,6 +224,26 @@ const TaskModal = ({ task, subgroupId, assignableUsers, initialAssigneeIds, onSa
                             ))}
                         </div>
                     </fieldset>
+                    {task && (
+                        <div className="form-group">
+                            <AttachmentList
+                                attachments={attachmentsData?.taskAttachments || []}
+                                onDelete={refetchAttachments}
+                            />
+                            <div className="attachment-upload">
+                                <label className="btn btn--secondary btn--small">
+                                    <i className="fas fa-upload"></i> Загрузить файл
+                                    <input
+                                        type="file"
+                                        onChange={handleFileUpload}
+                                        disabled={uploading}
+                                        style={{ display: 'none' }}
+                                    />
+                                </label>
+                                {uploading && <span className="uploading">Загрузка...</span>}
+                            </div>
+                        </div>
+                    )}
                     <div className="modal-actions">
                         <button type="button" className="btn btn--secondary" onClick={onClose}>
                             <i className="fas fa-times"></i> Отмена
