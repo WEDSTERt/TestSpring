@@ -12,7 +12,7 @@ const RegisterForm = () => {
     const [localError, setLocalError] = useState('');
     const [validationError, setValidationError] = useState('');
     const navigate = useNavigate();
-    const { login } = useAuth(); // ✅ используем только login, user не нужен
+    const { login } = useAuth();
 
     const [registerMutation, { data, error, loading }] = useMutation(REGISTER);
 
@@ -29,13 +29,11 @@ const RegisterForm = () => {
     const handleSubmit = (e) => {
         e.preventDefault();
         setValidationError('');
-        // Валидация имени
         const nameValidation = validateFullName(fullName);
         if (!nameValidation.isValid) {
             setValidationError(nameValidation.error);
             return;
         }
-        // Валидация пароля
         const passValidation = validatePassword(password);
         if (!passValidation.isValid) {
             setValidationError(passValidation.error);
@@ -54,40 +52,22 @@ const RegisterForm = () => {
             <h2>📝 Создать аккаунт</h2>
             <form onSubmit={handleSubmit}>
                 <div className="form-group">
-                    <label>Имя и фамилия (введите корректно)</label>
-                    <input
-                        type="text"
-                        value={fullName}
-                        onChange={(e) => setFullName(e.target.value)}
-                        placeholder="Иван Иванов"
-                        required
-                    />
+                    <label className="form-label">Имя и фамилия (введите корректно)</label>
+                    <input className="form-input" type="text" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Иван Иванов" required />
                 </div>
                 <div className="form-group">
-                    <label>Email</label>
-                    <input
-                        type="email"
-                        value={email}
-                        placeholder="name@example.com"
-                        onChange={(e) => setEmail(e.target.value)}
-                        required
-                    />
+                    <label className="form-label">Email</label>
+                    <input className="form-input" type="email" value={email} placeholder="name@example.com" onChange={(e) => setEmail(e.target.value)} required />
                 </div>
                 <div className="form-group">
-                    <label>Пароль (латиница, цифры, спецсимволы)</label>
-                    <input
-                        type="password"
-                        value={password}
-                        placeholder="******"
-                        onChange={(e) => setPassword(e.target.value)}
-                        required
-                    />
+                    <label className="form-label">Пароль (латиница, цифры, спецсимволы)</label>
+                    <input className="form-input" type="password" value={password} placeholder="******" onChange={(e) => setPassword(e.target.value)} required />
                 </div>
-                {validationError && <div className="error">{validationError}</div>}
-                {localError && <div className="error">{localError}</div>}
+                {validationError && <div className="message-error">{validationError}</div>}
+                {localError && <div className="message-error">{localError}</div>}
                 <div className="flex-row">
-                    <button type="submit" disabled={loading}>Зарегистрироваться</button>
-                    <Link to="/login"><button type="button" className="secondary">Отмена</button></Link>
+                    <button type="submit" className="btn" disabled={loading}>Зарегистрироваться</button>
+                    <Link to="/login"><button type="button" className="btn btn--secondary">Отмена</button></Link>
                 </div>
             </form>
         </div>

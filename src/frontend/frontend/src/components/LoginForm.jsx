@@ -13,7 +13,6 @@ const LoginForm = () => {
 
     const [loginMutation, { data, error, loading }] = useMutation(LOGIN);
 
-    // Единый эффект для обработки результата мутации
     useEffect(() => {
         if (data?.login) {
             login(data.login);
@@ -36,7 +35,7 @@ const LoginForm = () => {
         try {
             await loginMutation({ variables: { email, password } });
         } catch {
-            // Ошибка уже обрабатывается через error в useEffect
+            // ошибка уже обработана в useEffect
         }
     };
 
@@ -45,33 +44,17 @@ const LoginForm = () => {
             <h2>🔐 Вход в Kanban Docky</h2>
             <form onSubmit={handleSubmit}>
                 <div className="form-group">
-                    <label>Email</label>
-                    <input
-                        type="email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        required
-                    />
+                    <label className="form-label">Email</label>
+                    <input className="form-input" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
                 </div>
                 <div className="form-group">
-                    <label>Пароль</label>
-                    <input
-                        type="password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        required
-                    />
+                    <label className="form-label">Пароль</label>
+                    <input className="form-input" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
                 </div>
-                {localError && <div className="error">{localError}</div>}
+                {localError && <div className="message-error">{localError}</div>}
                 <div className="flex-row">
-                    <button type="submit" disabled={loading}>
-                        Войти
-                    </button>
-                    <Link to="/register">
-                        <button type="button" className="secondary">
-                            Регистрация
-                        </button>
-                    </Link>
+                    <button type="submit" className="btn" disabled={loading}>Войти</button>
+                    <Link to="/register"><button type="button" className="btn btn--secondary">Регистрация</button></Link>
                 </div>
             </form>
         </div>

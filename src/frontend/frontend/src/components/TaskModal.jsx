@@ -12,7 +12,12 @@ const TaskModal = ({ task, subgroupId, assignableUsers, initialAssigneeIds, onSa
         if (task) {
             setTitle(task.title || '');
             setDescription(task.description || '');
-            setDueDate(task.dueDate || '');
+            let formattedDueDate = '';
+            if (task.dueDate) {
+                const date = new Date(task.dueDate);
+                if (!isNaN(date)) formattedDueDate = date.toISOString().split('T')[0];
+            }
+            setDueDate(formattedDueDate);
             let rawStatus = task.status;
             if (typeof rawStatus === 'number') {
                 rawStatus = rawStatus === 0 ? 'TODO' : rawStatus === 1 ? 'IN_PROGRESS' : 'REVIEW';
@@ -62,51 +67,45 @@ const TaskModal = ({ task, subgroupId, assignableUsers, initialAssigneeIds, onSa
                 <h3>{task ? 'Редактировать задачу' : 'Новая задача'}</h3>
                 <form onSubmit={handleSubmit}>
                     <div className="form-group">
-                        <label>Название *</label>
-                        <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} required />
+                        <label className="form-label">Название *</label>
+                        <input className="form-input" type="text" value={title} onChange={(e) => setTitle(e.target.value)} required />
                     </div>
                     <div className="form-group">
-                        <label>Описание</label>
-                        <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows="3" />
+                        <label className="form-label">Описание</label>
+                        <textarea className="form-textarea" value={description} onChange={(e) => setDescription(e.target.value)} rows="3" />
                     </div>
                     <div className="form-group">
-                        <label>Дедлайн</label>
-                        <input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
+                        <label className="form-label">Дедлайн</label>
+                        <input className="form-input" type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
                     </div>
                     <div className="form-group">
-                        <label>Статус</label>
-                        <select value={status} onChange={(e) => setStatus(e.target.value)}>
+                        <label className="form-label">Статус</label>
+                        <select className="form-select" value={status} onChange={(e) => setStatus(e.target.value)}>
                             <option value="TODO">Создано</option>
                             <option value="IN_PROGRESS">В разработке</option>
                             <option value="REVIEW">Выполнено</option>
                         </select>
                     </div>
                     <div className="form-group">
-                        <label>Важность</label>
-                        <select value={priority} onChange={(e) => setPriority(e.target.value)}>
-                            <option value="1">Низкая</option>
-                            <option value="2">Средняя</option>
-                            <option value="3">Высокая</option>
+                        <label className="form-label">Важность</label>
+                        <select className="form-select" value={priority} onChange={(e) => setPriority(e.target.value)}>
+                            <option value="1">Низкая</option><option value="2">Средняя</option><option value="3">Высокая</option>
                         </select>
                     </div>
                     <div className="form-group">
-                        <label>Исполнители (только участники текущей подгруппы)</label>
+                        <label className="form-label">Исполнители (только участники текущей подгруппы)</label>
                         <div className="assignees-checkbox-list">
                             {assignableUsers.map(member => (
-                                <label key={member.userId} className="checkbox-label">
-                                    <input
-                                        type="checkbox"
-                                        checked={assigneeIds.includes(member.userId)}
-                                        onChange={() => handleAssigneeToggle(member.userId)}
-                                    />
+                                <label key={member.userId} className="assignees-checkbox-label">
+                                    <input type="checkbox" checked={assigneeIds.includes(member.userId)} onChange={() => handleAssigneeToggle(member.userId)} />
                                     {member.user?.fullName || `Пользователь ${member.userId}`}
                                 </label>
                             ))}
                         </div>
                     </div>
                     <div className="modal-actions">
-                        <button type="button" className="secondary" onClick={onClose}>Отмена</button>
-                        <button type="submit">Сохранить</button>
+                        <button type="button" className="btn btn--secondary" onClick={onClose}>Отмена</button>
+                        <button type="submit" className="btn">Сохранить</button>
                     </div>
                 </form>
             </div>

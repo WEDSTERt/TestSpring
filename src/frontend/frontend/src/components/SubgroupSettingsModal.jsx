@@ -50,7 +50,7 @@ const SubgroupSettingsModal = ({ subgroup, projectId, isOwner, onClose, onUpdate
             const userInfo = projectMembers.find(m => m.userId === selectedUserId)?.user || { fullName: 'Unknown' };
             setMembers([...members, { ...newMember, user: userInfo }]);
             setSelectedUserId('');
-            onUpdate(); // Обновляем данные после добавления участника
+            onUpdate();
         } catch (err) {
             console.error(err);
             alert('Ошибка добавления участника: ' + err.message);
@@ -60,18 +60,15 @@ const SubgroupSettingsModal = ({ subgroup, projectId, isOwner, onClose, onUpdate
     const handleRoleChange = async (memberId, newRole) => {
         await updateMember({ variables: { id: memberId, role: newRole } });
         setMembers(members.map(m => m.id === memberId ? { ...m, role: newRole } : m));
-        onUpdate(); // Обновляем данные после изменения роли
+        onUpdate();
     };
 
-    const handleRemoveMember = (memberId) => {
-        setDeleteConfirm({ isOpen: true, memberId });
-    };
-
+    const handleRemoveMember = (memberId) => setDeleteConfirm({ isOpen: true, memberId });
     const confirmRemoveMember = async () => {
         await removeMember({ variables: { id: deleteConfirm.memberId } });
         setMembers(members.filter(m => m.id !== deleteConfirm.memberId));
         setDeleteConfirm({ isOpen: false, memberId: null });
-        onUpdate(); // Обновляем данные после удаления участника
+        onUpdate();
     };
 
     return (
@@ -80,49 +77,49 @@ const SubgroupSettingsModal = ({ subgroup, projectId, isOwner, onClose, onUpdate
                 <button className="modal-close" onClick={onClose}>✕</button>
                 <h3>Настройки группы: {subgroup.name}</h3>
                 <div className="form-group">
-                    <label>Название группы</label>
-                    <div style={{ display: 'flex', gap: '8px' }}>
-                        <input type="text" value={name} onChange={(e) => setName(e.target.value)} />
-                        <button className="secondary small" onClick={handleUpdateName}>Сохранить</button>
+                    <label className="form-label">Название группы</label>
+                    <div className="flex-row" style={{ gap: '8px' }}>
+                        <input className="form-input" type="text" value={name} onChange={(e) => setName(e.target.value)} />
+                        <button className="btn btn--secondary btn--small" onClick={handleUpdateName}>Сохранить</button>
                     </div>
                 </div>
                 <div className="form-group">
-                    <label>Участники</label>
+                    <label className="form-label">Участники</label>
                     <ul className="member-list">
                         {members.map(m => (
                             <li key={m.id} className="member-item">
                                 <span>{m.user?.fullName || 'Unknown'} ({m.role})</span>
                                 {canManage && m.userId !== user.id && (
-                                    <div>
-                                        <select value={m.role} onChange={(e) => handleRoleChange(m.id, e.target.value)}>
+                                    <div className="flex-row">
+                                        <select className="form-select" value={m.role} onChange={(e) => handleRoleChange(m.id, e.target.value)} style={{ width: 'auto' }}>
                                             <option value="LEADER">Лидер</option>
                                             <option value="MEMBER">Участник</option>
                                         </select>
-                                        <button className="danger small" onClick={() => handleRemoveMember(m.id)}>Удалить</button>
+                                        <button className="btn btn--danger btn--small" onClick={() => handleRemoveMember(m.id)}>Удалить</button>
                                     </div>
                                 )}
                             </li>
                         ))}
                     </ul>
                     {canManage && (
-                        <div className="add-member-form" style={{ marginTop: '12px', display: 'flex', gap: '8px' }}>
-                            <select value={selectedUserId} onChange={(e) => setSelectedUserId(e.target.value)} style={{ flex: 2 }}>
+                        <div className="flex-row" style={{ marginTop: '12px', gap: '8px' }}>
+                            <select className="form-select" value={selectedUserId} onChange={(e) => setSelectedUserId(e.target.value)} style={{ flex: 2 }}>
                                 <option value="">Выберите участника</option>
                                 {availableMembers.map(m => (
                                     <option key={m.userId} value={m.userId}>{m.user.fullName}</option>
                                 ))}
                             </select>
-                            <select value={selectedRole} onChange={(e) => setSelectedRole(e.target.value)} style={{ flex: 1 }}>
+                            <select className="form-select" value={selectedRole} onChange={(e) => setSelectedRole(e.target.value)} style={{ flex: 1 }}>
                                 <option value="LEADER">Лидер</option>
                                 <option value="MEMBER">Участник</option>
                             </select>
-                            <button onClick={handleAddMember}>Добавить</button>
+                            <button className="btn" onClick={handleAddMember}>Добавить</button>
                         </div>
                     )}
                 </div>
-                <div className="modal-actions" style={{ marginTop: '20px', display: 'flex', justifyContent: 'space-between' }}>
-                    {isOwner && <button className="danger" onClick={() => { onDelete(); onClose(); }}>Удалить группу</button>}
-                    <button onClick={onClose}>Закрыть</button>
+                <div className="flex-row" style={{ marginTop: '20px', justifyContent: 'space-between' }}>
+                    {isOwner && <button className="btn btn--danger" onClick={() => { onDelete(); onClose(); }}>Удалить группу</button>}
+                    <button className="btn btn--secondary" onClick={onClose}>Закрыть</button>
                 </div>
             </div>
             <ConfirmModal

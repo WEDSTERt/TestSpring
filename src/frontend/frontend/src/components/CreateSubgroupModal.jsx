@@ -14,19 +14,12 @@ const CreateSubgroupModal = ({ projectId, existingSubgroups, onClose, onCreated 
         setError('');
         const trimmed = name.trim();
         if (!trimmed) return;
-        // Проверка уникальности названия (регистронезависимо)
         if (existingSubgroups.some(g => g.name.toLowerCase() === trimmed.toLowerCase())) {
             setError('Группа с таким названием уже существует в этом проекте');
             return;
         }
         try {
-            await createSubgroup({
-                variables: {
-                    projectId,
-                    name: trimmed,
-                    creatorUserId: user.id,
-                },
-            });
+            await createSubgroup({ variables: { projectId, name: trimmed, creatorUserId: user.id } });
             onCreated();
             onClose();
         } catch (err) {
@@ -42,19 +35,13 @@ const CreateSubgroupModal = ({ projectId, existingSubgroups, onClose, onCreated 
                 <h3>Создать новую группу</h3>
                 <form onSubmit={handleSubmit}>
                     <div className="form-group">
-                        <label>Название группы</label>
-                        <input
-                            type="text"
-                            value={name}
-                            onChange={(e) => setName(e.target.value)}
-                            autoFocus
-                            required
-                        />
+                        <label className="form-label">Название группы</label>
+                        <input className="form-input" type="text" value={name} onChange={(e) => setName(e.target.value)} autoFocus required />
                     </div>
-                    {error && <div className="error">{error}</div>}
+                    {error && <div className="message-error">{error}</div>}
                     <div className="modal-actions">
-                        <button type="button" className="secondary" onClick={onClose}>Отмена</button>
-                        <button type="submit">Создать</button>
+                        <button type="button" className="btn btn--secondary" onClick={onClose}>Отмена</button>
+                        <button type="submit" className="btn">Создать</button>
                     </div>
                 </form>
             </div>

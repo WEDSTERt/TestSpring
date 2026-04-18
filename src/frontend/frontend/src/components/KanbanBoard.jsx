@@ -19,37 +19,26 @@ const KanbanBoard = () => {
     const [deleteConfirm, setDeleteConfirm] = useState({ isOpen: false, taskId: null });
     const [initialAssigneeIds, setInitialAssigneeIds] = useState([]);
 
-    // ----- ЗАПРОСЫ -----
-    const { loading: projectLoading, data: projectData, refetch: refetchProject } = useQuery(GET_PROJECT_DETAILS, {
-        variables: { projectId },
-    });
-
+    const { loading: projectLoading, data: projectData, refetch: refetchProject } = useQuery(GET_PROJECT_DETAILS, { variables: { projectId } });
     const { loading: tasksLoading, data: tasksData, refetch: refetchTasks } = useQuery(GET_TASKS_BY_SUBGROUP, {
         variables: { subgroupId: activeSubgroupId },
         skip: !activeSubgroupId || activeSubgroupId === 'my-tasks',
     });
-
     const { loading: myTasksLoading, data: myTasksData, refetch: refetchMyTasks } = useQuery(GET_TASKS_BY_ASSIGNEE, {
         variables: { userId: user.id },
         skip: activeSubgroupId !== 'my-tasks',
     });
 
-    // ----- МУТАЦИИ -----
     const [createTask] = useMutation(CREATE_TASK);
     const [updateTask] = useMutation(UPDATE_TASK);
     const [deleteTask] = useMutation(DELETE_TASK);
     const [setTaskAssignees] = useMutation(SET_TASK_ASSIGNEES);
 
-    // ----- ВСПОМОГАТЕЛЬНАЯ ФУНКЦИЯ -----
     const refetchCurrentTasks = () => {
-        if (activeSubgroupId === 'my-tasks') {
-            refetchMyTasks();
-        } else if (activeSubgroupId) {
-            refetchTasks();
-        }
+        if (activeSubgroupId === 'my-tasks') refetchMyTasks();
+        else if (activeSubgroupId) refetchTasks();
     };
 
-    // ----- ВЫЧИСЛЯЕМ ВИДИМЫЕ ПОДГРУППЫ -----
     const visibleSubgroups = useMemo(() => {
         if (!projectData?.project) return [];
         const realSubgroups = projectData.project.subgroups || [];
@@ -61,25 +50,20 @@ const KanbanBoard = () => {
         return realSubgroups.filter(group => group.members?.some(m => m.userId === user.id));
     }, [projectData, user.id]);
 
-    // ----- УСТАНАВЛИВАЕМ АКТИВНУЮ ГРУППУ ПО УМОЛЧАНИЮ -----
     useEffect(() => {
-        if (activeSubgroupId === null) {
-            setActiveSubgroupId('my-tasks');
-        }
+        if (activeSubgroupId === null) setActiveSubgroupId('my-tasks');
     }, []);
 
-    // ----- РАННИЕ ВОЗВРАТЫ -----
-    if (projectLoading) return <div>Загрузка проекта...</div>;
-    if (!projectData?.project) return <div className="error">Проект не найден</div>;
+    if (projectLoading) return <div className="loading">Загрузка проекта...</div>;
+    if (!projectData?.project) return <div className="message-error">Проект не найден</div>;
 
     const project = projectData.project;
     const isOwner = project.owner.id === user.id;
-    const currentMember = project.members.find((m) => m.userId === user.id);
+    const currentMember = project.members.find(m => m.userId === user.id);
     const canEditProject = isOwner || currentMember?.role === 'ADMIN';
     const realSubgroups = project.subgroups || [];
     const projectMembers = project.members || [];
 
-    // ----- ЗАДАЧИ -----
     let tasks = [];
     if (activeSubgroupId === 'my-tasks') {
         const allTasks = myTasksData?.tasksByAssignee || [];
@@ -89,7 +73,6 @@ const KanbanBoard = () => {
         tasks = tasksData?.tasksBySubgroup || [];
     }
 
-    // ----- НОРМАЛИЗАЦИЯ СТАТУСА -----
     const normalizeStatus = (status) => {
         if (status === undefined || status === null) return 'TODO';
         if (typeof status === 'number') {
@@ -105,16 +88,22 @@ const KanbanBoard = () => {
         return 'TODO';
     };
 
+    const sortByDueDate = (a, b) => {
+        if (!a.dueDate && !b.dueDate) return 0;
+        if (!a.dueDate) return 1;
+        if (!b.dueDate) return -1;
+        return new Date(a.dueDate) - new Date(b.dueDate);
+    };
+
     const statusLabels = { TODO: '📝 Создано', IN_PROGRESS: '⚡ В разработке', REVIEW: '✅ Выполнено' };
     const statusColors = { TODO: '#3b82f6', IN_PROGRESS: '#f59e0b', REVIEW: '#10b981' };
 
     const tasksByStatus = {
-        TODO: tasks.filter(t => normalizeStatus(t.status) === 'TODO'),
-        IN_PROGRESS: tasks.filter(t => normalizeStatus(t.status) === 'IN_PROGRESS'),
-        REVIEW: tasks.filter(t => normalizeStatus(t.status) === 'REVIEW'),
+        TODO: tasks.filter(t => normalizeStatus(t.status) === 'TODO').sort(sortByDueDate),
+        IN_PROGRESS: tasks.filter(t => normalizeStatus(t.status) === 'IN_PROGRESS').sort(sortByDueDate),
+        REVIEW: tasks.filter(t => normalizeStatus(t.status) === 'REVIEW').sort(sortByDueDate),
     };
 
-    // ----- УЧАСТНИКИ ТЕКУЩЕЙ ПОДГРУППЫ ДЛЯ ВЫБОРА ИСПОЛНИТЕЛЕЙ -----
     let targetSubgroupForAssign = null;
     if (activeSubgroupId && activeSubgroupId !== 'my-tasks') {
         targetSubgroupForAssign = realSubgroups.find(g => g.id === activeSubgroupId);
@@ -123,7 +112,6 @@ const KanbanBoard = () => {
     }
     const assignableUsers = targetSubgroupForAssign?.members || [];
 
-    // ----- ОБРАБОТЧИКИ -----
     const handleCreateTask = () => {
         if (!activeSubgroupId) {
             alert('Сначала выберите группу');
@@ -136,9 +124,7 @@ const KanbanBoard = () => {
         } else {
             const targetGroup = realSubgroups.find(g => g.id === activeSubgroupId);
             if (targetGroup && targetGroup.members) {
-                ids = targetGroup.members
-                    .filter(m => m.role === 'LEADER')
-                    .map(m => m.userId);
+                ids = targetGroup.members.filter(m => m.role === 'LEADER').map(m => m.userId);
             }
         }
         setInitialAssigneeIds(ids);
@@ -152,8 +138,18 @@ const KanbanBoard = () => {
 
     const handleSaveTask = async (taskData) => {
         try {
+            const formattedDueDate = taskData.dueDate ? new Date(taskData.dueDate).toISOString() : null;
             if (editingTask) {
-                await updateTask({ variables: { id: editingTask.id, ...taskData } });
+                await updateTask({
+                    variables: {
+                        id: editingTask.id,
+                        title: taskData.title,
+                        description: taskData.description || null,
+                        dueDate: formattedDueDate,
+                        value: taskData.value,
+                        status: taskData.status,
+                    },
+                });
                 if (taskData.assigneeIds) {
                     await setTaskAssignees({ variables: { taskId: editingTask.id, userIds: taskData.assigneeIds } });
                 }
@@ -174,7 +170,7 @@ const KanbanBoard = () => {
                         createdByUserId: user.id,
                         title: taskData.title,
                         description: taskData.description || null,
-                        dueDate: taskData.dueDate || null,
+                        dueDate: formattedDueDate,
                         value: taskData.value || 0,
                         status: taskData.status || 'TODO',
                         assigneeIds,
@@ -182,9 +178,7 @@ const KanbanBoard = () => {
                 });
             }
             await refetchCurrentTasks();
-            if (activeSubgroupId !== 'my-tasks') {
-                await refetchMyTasks();
-            }
+            if (activeSubgroupId !== 'my-tasks') await refetchMyTasks();
             setShowTaskModal(false);
         } catch (err) {
             console.error('Ошибка сохранения задачи:', err);
@@ -192,20 +186,14 @@ const KanbanBoard = () => {
         }
     };
 
-    const handleDeleteTask = (taskId) => {
-        setDeleteConfirm({ isOpen: true, taskId });
-    };
-
+    const handleDeleteTask = (taskId) => setDeleteConfirm({ isOpen: true, taskId });
     const confirmDeleteTask = async () => {
         await deleteTask({ variables: { id: deleteConfirm.taskId } });
         refetchCurrentTasks();
-        if (activeSubgroupId !== 'my-tasks') {
-            refetchMyTasks();
-        }
+        if (activeSubgroupId !== 'my-tasks') refetchMyTasks();
         setDeleteConfirm({ isOpen: false, taskId: null });
     };
 
-    // ----- DRAG & DROP -----
     const handleDragStart = (e, taskId, fromStatus) => {
         e.dataTransfer.setData('taskId', taskId);
         e.dataTransfer.setData('fromStatus', fromStatus);
@@ -216,9 +204,7 @@ const KanbanBoard = () => {
         if (fromStatus === toStatus) return;
         await updateTask({ variables: { id: taskId, status: toStatus } });
         refetchCurrentTasks();
-        if (activeSubgroupId !== 'my-tasks') {
-            refetchMyTasks();
-        }
+        if (activeSubgroupId !== 'my-tasks') refetchMyTasks();
     };
     const handleDragOver = (e) => e.preventDefault();
 
@@ -238,34 +224,39 @@ const KanbanBoard = () => {
                 <div className="kanban-header">
                     <div className="kanban-title-area">
                         <h2 className="kanban-title">{project.name}</h2>
-                        <button className="btn-primary" onClick={handleCreateTask}>+ Новая задача</button>
+                        <button className="btn" onClick={handleCreateTask}>+ Новая задача</button>
                     </div>
                     {canEditProject && (
-                        <button className="secondary" onClick={() => navigate(`/project/${projectId}/settings`)}>⚙️ Настройки проекта</button>
+                        <button className="btn btn--secondary" onClick={() => navigate(`/project/${projectId}/settings`)}>⚙️ Настройки проекта</button>
                     )}
                 </div>
-                {isLoading && <div>Загрузка задач...</div>}
+                {isLoading && <div className="loading">Загрузка задач...</div>}
                 {activeSubgroupId && (
                     <div className="kanban-board">
                         {['TODO', 'IN_PROGRESS', 'REVIEW'].map((status) => (
                             <div key={status} className="kanban-column" onDragOver={handleDragOver} onDrop={(e) => handleDrop(e, status)}>
-                                <div className="column-header">
+                                <div className="kanban-column-header">
                                     <h3 style={{ borderLeftColor: statusColors[status] }}>{statusLabels[status]}</h3>
-                                    <span className="task-count">{tasksByStatus[status].length}</span>
+                                    <span className="kanban-task-count">{tasksByStatus[status].length}</span>
                                 </div>
-                                <div className="task-list">
+                                <div className="kanban-task-list">
                                     {tasksByStatus[status].map((task) => (
                                         <div key={task.id} className="task-card" draggable onDragStart={(e) => handleDragStart(e, task.id, status)} onClick={() => handleEditTask(task)}>
                                             <div className="task-title">{task.title}</div>
-                                            <div className="task-meta">{task.dueDate && <span>📅 {task.dueDate}</span>}</div>
-                                            <div className={`task-priority priority-${task.value || 2}`}>
-                                                {task.value === 1 && '🔵 Низкая'}
-                                                {task.value === 2 && '🟡 Средняя'}
-                                                {task.value === 3 && '🔴 Высокая'}
-                                                {!task.value && '🟡 Средняя'}
+                                            <div className="task-meta" />
+                                            <div className="task-bottom-row">
+                                                <div className={`task-priority priority-${task.value || 2}`}>
+                                                    {task.value === 1 && '🔵 Низкая'}
+                                                    {task.value === 2 && '🟡 Средняя'}
+                                                    {task.value === 3 && '🔴 Высокая'}
+                                                    {!task.value && '🟡 Средняя'}
+                                                </div>
+                                                {task.dueDate && <div className="task-date">📅 {new Date(task.dueDate).toLocaleDateString()}</div>}
                                             </div>
-                                            <div className="task-assignees">{task.assignees?.map(a => <span key={a.id}>{a.fullName}</span>)}</div>
-                                            <button className="delete-task-btn" onClick={(e) => { e.stopPropagation(); handleDeleteTask(task.id); }}>🗑️</button>
+                                            <div className="task-assignees">
+                                                {task.assignees?.map(a => <span key={a.id}>{a.fullName}</span>)}
+                                            </div>
+                                            <button className="task-delete-btn" onClick={(e) => { e.stopPropagation(); handleDeleteTask(task.id); }}>🗑️</button>
                                         </div>
                                     ))}
                                 </div>

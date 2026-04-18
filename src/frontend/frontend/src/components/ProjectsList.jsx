@@ -19,21 +19,15 @@ const ProjectsList = () => {
     const [createProject] = useMutation(CREATE_PROJECT);
 
     useEffect(() => {
-        if (showCreateModal) {
-            document.body.style.overflow = 'hidden';
-        } else {
-            document.body.style.overflow = '';
-        }
-        return () => {
-            document.body.style.overflow = '';
-        };
+        document.body.style.overflow = showCreateModal ? 'hidden' : '';
+        return () => { document.body.style.overflow = ''; };
     }, [showCreateModal]);
 
-    if (loading) return <div>Загрузка проектов...</div>;
-    if (error) return <div className="error">Ошибка: {error.message}</div>;
+    if (loading) return <div className="loading">Загрузка проектов...</div>;
+    if (error) return <div className="message-error">Ошибка: {error.message}</div>;
 
     const projectsMap = new Map();
-    [...(data.owned || []), ...(data.member || [])].forEach((p) => projectsMap.set(p.id, p));
+    [...(data.owned || []), ...(data.member || [])].forEach(p => projectsMap.set(p.id, p));
     const projects = Array.from(projectsMap.values());
 
     const handleCreateSubmit = async (e) => {
@@ -52,55 +46,40 @@ const ProjectsList = () => {
     const handleOpenBoard = (id) => navigate(`/project/${id}/board`);
 
     const modalOverlayStyle = {
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        width: '100vw',
-        height: '100vh',
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        zIndex: 99999,
-        margin: 0,
-        padding: 0,
+        position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+        width: '100vw', height: '100vh', backgroundColor: 'rgba(0,0,0,0.5)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        zIndex: 99999, margin: 0, padding: 0,
     };
     const modalContentStyle = {
-        backgroundColor: 'white',
-        padding: '24px',
-        borderRadius: '12px',
-        minWidth: '320px',
-        maxWidth: '90%',
-        boxShadow: '0 10px 25px rgba(0, 0, 0, 0.2)',
+        backgroundColor: 'white', padding: '24px', borderRadius: '12px',
+        minWidth: '320px', maxWidth: '90%', boxShadow: '0 10px 25px rgba(0,0,0,0.2)',
         zIndex: 100000,
     };
-    const Modal = () =>
-        createPortal(
-            <div style={modalOverlayStyle} onClick={() => setShowCreateModal(false)}>
-                <div style={modalContentStyle} onClick={(e) => e.stopPropagation()}>
-                    <h3>Новый проект</h3>
-                    <form onSubmit={handleCreateSubmit}>
-                        <div className="form-group">
-                            <label>Название проекта</label>
-                            <input type="text" value={projectName} onChange={(e) => setProjectName(e.target.value)} autoFocus required />
-                        </div>
-                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '16px' }}>
-                            <button type="button" className="secondary" onClick={() => setShowCreateModal(false)}>Отмена</button>
-                            <button type="submit">Создать</button>
-                        </div>
-                    </form>
-                </div>
-            </div>,
-            document.body
-        );
+    const Modal = () => createPortal(
+        <div style={modalOverlayStyle} onClick={() => setShowCreateModal(false)}>
+            <div style={modalContentStyle} onClick={(e) => e.stopPropagation()}>
+                <h3>Новый проект</h3>
+                <form onSubmit={handleCreateSubmit}>
+                    <div className="form-group">
+                        <label className="form-label">Название проекта</label>
+                        <input className="form-input" type="text" value={projectName} onChange={(e) => setProjectName(e.target.value)} autoFocus required />
+                    </div>
+                    <div className="flex-row" style={{ justifyContent: 'flex-end', gap: '8px', marginTop: '16px' }}>
+                        <button type="button" className="btn btn--secondary" onClick={() => setShowCreateModal(false)}>Отмена</button>
+                        <button type="submit" className="btn">Создать</button>
+                    </div>
+                </form>
+            </div>
+        </div>,
+        document.body
+    );
 
     return (
         <>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div className="flex-row" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
                 <h2>📂 Мои проекты</h2>
-                <button onClick={() => setShowCreateModal(true)}>+ Создать проект</button>
+                <button className="btn" onClick={() => setShowCreateModal(true)}>+ Создать проект</button>
             </div>
             {projects.length === 0 ? (
                 <p>У вас пока нет проектов. Нажмите «Создать проект».</p>
@@ -108,7 +87,7 @@ const ProjectsList = () => {
                 <div className="grid-2">
                     {projects.map((proj) => {
                         const isOwner = proj.owner.id === user.id;
-                        const memberEntry = proj.members.find((m) => m.userId === user.id);
+                        const memberEntry = proj.members.find(m => m.userId === user.id);
                         const role = memberEntry?.role || (isOwner ? 'OWNER' : 'MEMBER');
                         const canEdit = role === 'OWNER' || role === 'ADMIN';
                         return (
@@ -117,9 +96,9 @@ const ProjectsList = () => {
                                 <p>👑 Владелец: {proj.owner.fullName}</p>
                                 <p>👥 Участников: {proj.members.length}</p>
                                 <div className="flex-row mt-4">
-                                    <button className="small secondary" onClick={() => handleOpenBoard(proj.id)}>📌 Открыть доску</button>
+                                    <button className="btn btn--secondary btn--small" onClick={() => handleOpenBoard(proj.id)}>📌 Открыть доску</button>
                                     {canEdit && (
-                                        <button className="small" onClick={() => navigate(`/project/${proj.id}/settings`)}>⚙️ Настройки</button>
+                                        <button className="btn btn--small" onClick={() => navigate(`/project/${proj.id}/settings`)}>⚙️ Настройки</button>
                                     )}
                                 </div>
                             </div>

@@ -17,21 +17,13 @@ const AccountSettings = () => {
     const [validationError, setValidationError] = useState('');
 
     useEffect(() => {
-        if (user) {
-            setFullName(user.fullName || '');
-        }
+        if (user) setFullName(user.fullName || '');
     }, [user]);
 
     const [updateUser, { data, error, loading: updateLoading }] = useMutation(UPDATE_USER);
     const [deleteUser] = useMutation(DELETE_USER, {
-        onCompleted: () => {
-            logout();
-            navigate('/login');
-        },
-        onError: (err) => {
-            setMessage(err.message);
-            setIsError(true);
-        },
+        onCompleted: () => { logout(); navigate('/login'); },
+        onError: (err) => { setMessage(err.message); setIsError(true); },
     });
 
     useEffect(() => {
@@ -48,7 +40,6 @@ const AccountSettings = () => {
         }
     }, [data, error, login]);
 
-    // Защита от рендера до загрузки данных
     if (loading) return <div className="loading">Загрузка...</div>;
     if (!user) return null;
 
@@ -72,41 +63,27 @@ const AccountSettings = () => {
         updateUser({ variables });
     };
 
-    const handleDeleteAccount = () => {
-        deleteUser({ variables: { id: user.id } });
-    };
+    const handleDeleteAccount = () => deleteUser({ variables: { id: user.id } });
 
     return (
         <div className="account-settings-container">
             <div className="card account-settings-card">
-                <button className="close-settings" onClick={() => navigate('/')}>✕</button>
+                <button className="modal-close--settings" onClick={() => navigate('/')}>✕</button>
                 <h2>⚙️ Настройки профиля</h2>
                 <form onSubmit={handleSubmit}>
                     <div className="form-group">
-                        <label>Имя пользователя (Имя Фамилия)</label>
-                        <input
-                            type="text"
-                            value={fullName}
-                            onChange={(e) => setFullName(e.target.value)}
-                            placeholder="Иван Иванов"
-                        />
+                        <label className="form-label">Имя пользователя (Имя Фамилия)</label>
+                        <input className="form-input" type="text" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Иван Иванов" />
                     </div>
                     <div className="form-group">
-                        <label>Новый пароль (оставьте пустым, чтобы не менять)</label>
-                        <input
-                            type="password"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            placeholder="••••••••"
-                        />
+                        <label className="form-label">Новый пароль (оставьте пустым, чтобы не менять)</label>
+                        <input className="form-input" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" />
                     </div>
-                    {validationError && <div className="error">{validationError}</div>}
-                    {message && (
-                        <div className={isError ? 'error' : 'success'}>{message}</div>
-                    )}
+                    {validationError && <div className="message-error">{validationError}</div>}
+                    {message && <div className={isError ? 'message-error' : 'message-success'}>{message}</div>}
                     <div className="form-actions">
-                        <button type="submit" disabled={updateLoading}>Сохранить изменения</button>
-                        <button type="button" className="danger" onClick={() => setShowDeleteConfirm(true)}>Удалить аккаунт</button>
+                        <button type="submit" className="btn" disabled={updateLoading}>Сохранить изменения</button>
+                        <button type="button" className="btn btn--danger" onClick={() => setShowDeleteConfirm(true)}>Удалить аккаунт</button>
                     </div>
                 </form>
             </div>

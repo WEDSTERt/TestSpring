@@ -12,20 +12,20 @@ const Layout = ({ children }) => {
     };
 
     return (
-        <div id="app">
-            <header className="navbar">
-                <div className="logo">📋 Kanban Docky</div>
-                <div className="nav-links">
+        <div className="app-root">
+            <header className="app-navbar">
+                <div className="app-logo">📋 Kanban Docky</div>
+                <div className="app-nav-links">
                     <Link to="/">📁 Проекты</Link>
-                    <span className="user-info" onClick={() => navigate('/account')} style={{ cursor: 'pointer' }}>
+                    <span className="app-user-info" onClick={() => navigate('/account')} style={{ cursor: 'pointer' }}>
             👤 {user?.fullName}
           </span>
-                    <button className="secondary small" onClick={handleLogout}>
+                    <button className="btn btn--secondary btn--small" onClick={handleLogout}>
                         Выйти
                     </button>
                 </div>
             </header>
-            <main id="viewContainer">{children}</main>
+            <main>{children}</main>
         </div>
     );
 };
