@@ -85,7 +85,7 @@ const AccountSettings = () => {
     return (
         <div className="account-settings-container">
             <div className="card account-settings-card">
-                <button className="modal-close--settings" onClick={() => navigate('/')}>✕</button>
+                <button className="modal-close--settings" onClick={() => navigate(-1)}>✕</button>
                 <h2><i className="fas fa-user-cog"></i> Настройки профиля</h2>
                 <form onSubmit={handleSubmit}>
                     <div className="form-group">

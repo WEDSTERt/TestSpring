@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuery, useMutation } from '@apollo/client';
 import { GET_PROJECT_DETAILS } from '../graphql/queries';
 import { GET_TASKS_BY_SUBGROUP, GET_TASKS_BY_ASSIGNEE } from '../graphql/queries';
@@ -10,20 +10,36 @@ import TaskModal from './TaskModal';
 import ConfirmModal from './ConfirmModal';
 
 const KanbanBoard = () => {
-    const { projectId } = useParams();
     const navigate = useNavigate();
+    const [searchParams, setSearchParams] = useSearchParams();
+    const projectId = searchParams.get('projectId');
+    const urlSubgroupId = searchParams.get('subgroupId');
     const { user } = useAuth();
+
     const [activeSubgroupId, setActiveSubgroupId] = useState(null);
     const [showTaskModal, setShowTaskModal] = useState(false);
     const [editingTask, setEditingTask] = useState(null);
     const [deleteConfirm, setDeleteConfirm] = useState({ isOpen: false, taskId: null });
     const [initialAssigneeIds, setInitialAssigneeIds] = useState([]);
 
-    const { loading: projectLoading, data: projectData, refetch: refetchProject } = useQuery(GET_PROJECT_DETAILS, { variables: { projectId } });
+    // Редирект, если нет projectId
+    useEffect(() => {
+        if (!projectId) {
+            navigate('/');
+        }
+    }, [projectId, navigate]);
+
+    // Запрос проекта
+    const { loading: projectLoading, data: projectData, refetch: refetchProject } = useQuery(GET_PROJECT_DETAILS, {
+        variables: { projectId },
+        skip: !projectId,
+    });
+
     const { loading: tasksLoading, data: tasksData, refetch: refetchTasks } = useQuery(GET_TASKS_BY_SUBGROUP, {
         variables: { subgroupId: activeSubgroupId },
         skip: !activeSubgroupId || activeSubgroupId === 'my-tasks',
     });
+
     const { loading: myTasksLoading, data: myTasksData, refetch: refetchMyTasks } = useQuery(GET_TASKS_BY_ASSIGNEE, {
         variables: { userId: user.id },
         skip: activeSubgroupId !== 'my-tasks',
@@ -50,9 +66,29 @@ const KanbanBoard = () => {
         return realSubgroups.filter(group => group.members?.some(m => m.userId === user.id));
     }, [projectData, user.id]);
 
+    // Синхронизация активной группы с URL
     useEffect(() => {
-        if (activeSubgroupId === null) setActiveSubgroupId('my-tasks');
-    }, []);
+        if (!projectData?.project) return;
+        const realSubgroups = projectData.project.subgroups || [];
+        if (urlSubgroupId) {
+            if (urlSubgroupId === 'my-tasks') {
+                setActiveSubgroupId('my-tasks');
+            } else if (realSubgroups.some(g => g.id === urlSubgroupId)) {
+                setActiveSubgroupId(urlSubgroupId);
+            } else {
+                setActiveSubgroupId('my-tasks');
+                setSearchParams({ projectId, subgroupId: 'my-tasks' });
+            }
+        } else {
+            setActiveSubgroupId('my-tasks');
+            setSearchParams({ projectId, subgroupId: 'my-tasks' });
+        }
+    }, [projectData, urlSubgroupId, projectId, setSearchParams]);
+
+    const handleSelectSubgroup = (subgroupId) => {
+        setActiveSubgroupId(subgroupId);
+        setSearchParams({ projectId, subgroupId });
+    };
 
     if (projectLoading) return <div className="loading">Загрузка проекта...</div>;
     if (!projectData?.project) return <div className="message-error">Проект не найден</div>;
@@ -97,7 +133,7 @@ const KanbanBoard = () => {
 
     const statusLabels = {
         TODO: <><i className="fas fa-clipboard-list"></i> Создано</>,
-        IN_PROGRESS: <><i className="fas fa-spinner fa-pulse"></i> В разработке</>,
+        IN_PROGRESS: <><i className="fas fa-cogs"></i> В разработке</>,
         REVIEW: <><i className="fas fa-check-circle"></i> Выполнено</>,
     };
     const statusColors = { TODO: '#3b82f6', IN_PROGRESS: '#f59e0b', REVIEW: '#10b981' };
@@ -219,7 +255,7 @@ const KanbanBoard = () => {
             <SubgroupsPanel
                 projectId={projectId}
                 activeSubgroupId={activeSubgroupId}
-                onSelectSubgroup={setActiveSubgroupId}
+                onSelectSubgroup={handleSelectSubgroup}
                 isOwner={isOwner}
                 projectMembers={projectMembers}
                 onRefreshProject={refetchProject}
@@ -227,13 +263,14 @@ const KanbanBoard = () => {
             <div className="kanban-container">
                 <div className="kanban-header">
                     <div className="kanban-title-area">
-                        <h2 className="kanban-title"><i className="fas fa-chalkboard    "></i> {project.name}</h2>
-                        <button className="btn" onClick={handleCreateTask}>
-                            <i className="fas fa-plus"></i> Новая задача
-                        </button>
+                        <h2 className="kanban-title"><i className="fas fa-chalkboard"></i> {project.name}</h2>
+                        <button className="btn" onClick={handleCreateTask}>+ Новая задача</button>
                     </div>
                     {canEditProject && (
-                        <button className="btn btn--secondary" onClick={() => navigate(`/project/${projectId}/settings`)}>
+                        <button
+                            className="btn btn--secondary"
+                            onClick={() => navigate(`/settings?projectId=${projectId}`, { state: { from: `/board?projectId=${projectId}&subgroupId=${activeSubgroupId}` } })}
+                        >
                             <i className="fas fa-cog"></i> Настройки проекта
                         </button>
                     )}
@@ -259,7 +296,11 @@ const KanbanBoard = () => {
                                                     {task.value === 3 && '🔴 Высокая'}
                                                     {!task.value && '🟡 Средняя'}
                                                 </div>
-                                                {task.dueDate && <div className="task-date">📅 {new Date(task.dueDate).toLocaleDateString()}</div>}
+                                                {task.dueDate && (
+                                                    <div className="task-date">
+                                                        <i className="far fa-calendar-alt"></i> {new Date(task.dueDate).toLocaleString([], { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                                                    </div>
+                                                )}
                                             </div>
                                             <div className="task-assignees">
                                                 {task.assignees?.map(a => <span key={a.id}><i className="fas fa-user"></i> {a.fullName}</span>)}

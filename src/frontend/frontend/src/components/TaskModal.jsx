@@ -1,23 +1,21 @@
 import React, { useState, useEffect } from 'react';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
 
 const TaskModal = ({ task, subgroupId, assignableUsers, initialAssigneeIds, onSave, onClose }) => {
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
-    const [dueDate, setDueDate] = useState('');
+    const [dueDate, setDueDate] = useState(null);
     const [status, setStatus] = useState('TODO');
     const [priority, setPriority] = useState(2);
     const [assigneeIds, setAssigneeIds] = useState([]);
+    const users = assignableUsers || []; // защита от undefined
 
     useEffect(() => {
         if (task) {
             setTitle(task.title || '');
             setDescription(task.description || '');
-            let formattedDueDate = '';
-            if (task.dueDate) {
-                const date = new Date(task.dueDate);
-                if (!isNaN(date)) formattedDueDate = date.toISOString().split('T')[0];
-            }
-            setDueDate(formattedDueDate);
+            setDueDate(task.dueDate ? new Date(task.dueDate) : null);
             let rawStatus = task.status;
             if (typeof rawStatus === 'number') {
                 rawStatus = rawStatus === 0 ? 'TODO' : rawStatus === 1 ? 'IN_PROGRESS' : 'REVIEW';
@@ -31,12 +29,17 @@ const TaskModal = ({ task, subgroupId, assignableUsers, initialAssigneeIds, onSa
         } else {
             setTitle('');
             setDescription('');
-            setDueDate('');
+            setDueDate(null);
             setStatus('TODO');
             setPriority(2);
             setAssigneeIds(initialAssigneeIds || []);
         }
     }, [task, initialAssigneeIds]);
+
+    const setCurrentDateTime = () => {
+        const now = new Date();
+        setDueDate(now);
+    };
 
     const handleSubmit = (e) => {
         e.preventDefault();
@@ -44,10 +47,18 @@ const TaskModal = ({ task, subgroupId, assignableUsers, initialAssigneeIds, onSa
             alert('Введите название задачи');
             return;
         }
+        let dueDateISO = null;
+        if (dueDate) {
+            if (dueDate < new Date()) {
+                alert('Нельзя установить дедлайн в прошлом');
+                return;
+            }
+            dueDateISO = dueDate.toISOString();
+        }
         onSave({
             title: title.trim(),
             description: description.trim() || null,
-            dueDate: dueDate || null,
+            dueDate: dueDateISO,
             status,
             value: parseInt(priority),
             assigneeIds,
@@ -60,13 +71,29 @@ const TaskModal = ({ task, subgroupId, assignableUsers, initialAssigneeIds, onSa
         );
     };
 
+    const customHeader = ({ date, changeYear, changeMonth, decreaseMonth, increaseMonth, prevMonthButtonDisabled, nextMonthButtonDisabled }) => (
+        <div className="custom-datepicker-header">
+            <button onClick={decreaseMonth} disabled={prevMonthButtonDisabled}>{"<"}</button>
+            <select value={date.getFullYear()} onChange={({ target: { value } }) => changeYear(parseInt(value))}>
+                {Array.from({ length: 10 }, (_, i) => date.getFullYear() - 5 + i).map(y => (
+                    <option key={y} value={y}>{y}</option>
+                ))}
+            </select>
+            <select value={date.getMonth()} onChange={({ target: { value } }) => changeMonth(parseInt(value))}>
+                {Array.from({ length: 12 }, (_, i) => (
+                    <option key={i} value={i}>{new Date(0, i).toLocaleString('ru', { month: 'long' })}</option>
+                ))}
+            </select>
+            <button onClick={increaseMonth} disabled={nextMonthButtonDisabled}>{">"}</button>
+        </div>
+    );
+
     return (
         <div className="modal-overlay" onClick={onClose}>
             <div className="modal-content" onClick={(e) => e.stopPropagation()}>
                 <button className="modal-close" onClick={onClose}>✕</button>
                 <h3>{task ? 'Редактировать задачу' : 'Новая задача'}</h3>
                 <form onSubmit={handleSubmit}>
-                    {/* Название */}
                     <div className="form-group">
                         <label className="form-label" htmlFor="task-title">Название *</label>
                         <input
@@ -78,8 +105,6 @@ const TaskModal = ({ task, subgroupId, assignableUsers, initialAssigneeIds, onSa
                             required
                         />
                     </div>
-
-                    {/* Описание */}
                     <div className="form-group">
                         <label className="form-label" htmlFor="task-desc">Описание</label>
                         <textarea
@@ -90,20 +115,38 @@ const TaskModal = ({ task, subgroupId, assignableUsers, initialAssigneeIds, onSa
                             rows="3"
                         />
                     </div>
-
-                    {/* Дедлайн */}
                     <div className="form-group">
-                        <label className="form-label" htmlFor="task-due">Дедлайн</label>
-                        <input
-                            className="form-input"
-                            type="date"
-                            id="task-due"
-                            value={dueDate}
-                            onChange={(e) => setDueDate(e.target.value)}
-                        />
+                        <label className="form-label">Дедлайн (дата и время)</label>
+                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                            <div style={{ flex: 1 }}>
+                                <DatePicker
+                                    selected={dueDate}
+                                    onChange={(date) => setDueDate(date)}
+                                    showTimeSelect
+                                    dateFormat="dd.MM.yyyy HH:mm"
+                                    timeFormat="HH:mm"
+                                    timeIntervals={15}
+                                    minDate={new Date()}
+                                    filterTime={(time) => time >= new Date()}
+                                    placeholderText="Выберите дату и время"
+                                    className="form-input"
+                                    isClearable
+                                    customHeader={customHeader}
+                                />
+                            </div>
+                            <button
+                                type="button"
+                                className="btn btn--secondary btn--small"
+                                onClick={setCurrentDateTime}
+                                style={{ whiteSpace: 'nowrap' }}
+                            >
+                                <i className="fas fa-clock"></i> Сейчас
+                            </button>
+                        </div>
+                        <small style={{ color: '#64748b', display: 'block', marginTop: '4px' }}>
+                            <i className="fas fa-clock"></i> Можно выбрать только текущую или будущую дату и время.
+                        </small>
                     </div>
-
-                    {/* Статус */}
                     <div className="form-group">
                         <label className="form-label" htmlFor="task-status">Статус</label>
                         <select
@@ -117,8 +160,6 @@ const TaskModal = ({ task, subgroupId, assignableUsers, initialAssigneeIds, onSa
                             <option value="REVIEW">Выполнено</option>
                         </select>
                     </div>
-
-                    {/* Важность */}
                     <div className="form-group">
                         <label className="form-label" htmlFor="task-priority">Важность</label>
                         <select
@@ -132,17 +173,13 @@ const TaskModal = ({ task, subgroupId, assignableUsers, initialAssigneeIds, onSa
                             <option value="3">Высокая</option>
                         </select>
                     </div>
-
-                    {/* Исполнители (чекбоксы) */}
                     <fieldset className="form-group">
-                        <legend className="form-label">Исполнители (только участники текущей подгруппы)</legend>
+                        <legend className="form-label"><i className="fas fa-user-friends"></i> Исполнители (только участники текущей подгруппы)</legend>
                         <div className="assignees-checkbox-list">
-                            {assignableUsers.map(member => (
+                            {users.map(member => (
                                 <label key={member.userId} className="assignees-checkbox-label">
                                     <input
                                         type="checkbox"
-                                        id={`assignee-${member.userId}`}
-                                        name="assignees"
                                         checked={assigneeIds.includes(member.userId)}
                                         onChange={() => handleAssigneeToggle(member.userId)}
                                     />
@@ -151,11 +188,13 @@ const TaskModal = ({ task, subgroupId, assignableUsers, initialAssigneeIds, onSa
                             ))}
                         </div>
                     </fieldset>
-
-                    {/* Кнопки */}
                     <div className="modal-actions">
-                        <button type="button" className="btn btn--secondary" onClick={onClose}>Отмена</button>
-                        <button type="submit" className="btn">Сохранить</button>
+                        <button type="button" className="btn btn--secondary" onClick={onClose}>
+                            <i className="fas fa-times"></i> Отмена
+                        </button>
+                        <button type="submit" className="btn">
+                            <i className="fas fa-save"></i> Сохранить
+                        </button>
                     </div>
                 </form>
             </div>

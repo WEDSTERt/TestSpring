@@ -43,7 +43,9 @@ const ProjectsList = () => {
         }
     };
 
-    const handleOpenBoard = (id) => navigate(`/project/${id}/board`);
+    const handleOpenBoard = (projectId) => {
+        navigate(`/board?projectId=${projectId}&subgroupId=my-tasks`);
+    };
 
     const modalOverlayStyle = {
         position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
@@ -106,7 +108,7 @@ const ProjectsList = () => {
                         const canEdit = role === 'OWNER' || role === 'ADMIN';
                         return (
                             <div className="project-card" key={proj.id}>
-                                <h3><i className="fas fa-project-diagram"></i> {proj.name}</h3>
+                                <h3><i className="fas fa-chalkboard"></i> {proj.name}</h3>
                                 <p><i className="fas fa-crown"></i> Владелец: {proj.owner.fullName}</p>
                                 <p><i className="fas fa-users"></i> Участников: {proj.members.length}</p>
                                 <div className="flex-row mt-4">
@@ -114,7 +116,7 @@ const ProjectsList = () => {
                                         <i className="fas fa-chalkboard"></i> Открыть доску
                                     </button>
                                     {canEdit && (
-                                        <button className="btn btn--small" onClick={() => navigate(`/project/${proj.id}/settings`)}>
+                                        <button className="btn btn--small" onClick={() => navigate(`/settings?projectId=${proj.id}`, { state: { from: '/' } })}>
                                             <i className="fas fa-cog"></i> Настройки
                                         </button>
                                     )}

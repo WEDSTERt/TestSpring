@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { useQuery, useMutation } from '@apollo/client';
 import { GET_PROJECT_DETAILS, GET_USER_PROJECTS, GET_USERS } from '../graphql/queries';
 import {
@@ -12,10 +12,11 @@ import {
 import { useAuth } from '../contexts/AuthContext';
 import ConfirmModal from './ConfirmModal';
 
-
 const ProjectSettings = () => {
-    const { projectId } = useParams();
     const navigate = useNavigate();
+    const location = useLocation();
+    const [searchParams] = useSearchParams();
+    const projectId = searchParams.get('projectId');
     const { user } = useAuth();
     const [newMemberEmail, setNewMemberEmail] = useState('');
     const [newMemberRole, setNewMemberRole] = useState('MEMBER');
@@ -40,12 +41,21 @@ const ProjectSettings = () => {
 
     if (loading) return <div className="loading">Загрузка настроек проекта...</div>;
     if (error) return <div className="message-error">{error.message}</div>;
+    if (!projectId) return <div className="message-error">Проект не указан</div>;
 
     const project = data.project;
     const isOwner = project.owner.id === user.id;
     const currentMember = project.members.find(m => m.userId === user.id);
     const canManage = isOwner || currentMember?.role === 'ADMIN' || currentMember?.role === 'OWNER';
     if (!canManage) return <div className="message-error">У вас нет прав на управление этим проектом.</div>;
+
+    const handleClose = () => {
+        if (location.state?.from) {
+            navigate(location.state.from);
+        } else {
+            navigate('/');
+        }
+    };
 
     const handleUpdateName = async () => {
         if (!newProjectName.trim()) return;
@@ -116,7 +126,7 @@ const ProjectSettings = () => {
 
     return (
         <div style={{ position: 'relative' }}>
-            <button className="modal-close--settings" onClick={() => navigate(-1)}>✕</button>
+            <button className="modal-close--settings" onClick={handleClose}>✕</button>
             <h2><i className="fas fa-cog"></i> Настройки проекта</h2>
             <div className="card">
                 <h3><i className="fas fa-pen"></i> Основное</h3>
@@ -178,7 +188,7 @@ const ProjectSettings = () => {
                 {message && <div className={`mt-4 ${isError ? 'message-error' : 'message-success'}`}>{message}</div>}
             </div>
 
-            {/* Модальное окно переименования проекта */}
+            {/* Модальное окно переименования */}
             {renameModalOpen && (
                 <div className="modal-overlay" onClick={() => setRenameModalOpen(false)}>
                     <div className="modal-content" onClick={(e) => e.stopPropagation()}>
