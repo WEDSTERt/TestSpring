@@ -59,15 +59,27 @@ const ProjectsList = () => {
     const Modal = () => createPortal(
         <div style={modalOverlayStyle} onClick={() => setShowCreateModal(false)}>
             <div style={modalContentStyle} onClick={(e) => e.stopPropagation()}>
-                <h3>Новый проект</h3>
+                <h3><i className="fas fa-plus-circle"></i> Новый проект</h3>
                 <form onSubmit={handleCreateSubmit}>
                     <div className="form-group">
-                        <label className="form-label">Название проекта</label>
-                        <input className="form-input" type="text" value={projectName} onChange={(e) => setProjectName(e.target.value)} autoFocus required />
+                        <label className="form-label" htmlFor="project-name">Название проекта</label>
+                        <input
+                            className="form-input"
+                            type="text"
+                            id="project-name"
+                            value={projectName}
+                            onChange={(e) => setProjectName(e.target.value)}
+                            autoFocus
+                            required
+                        />
                     </div>
                     <div className="flex-row" style={{ justifyContent: 'flex-end', gap: '8px', marginTop: '16px' }}>
-                        <button type="button" className="btn btn--secondary" onClick={() => setShowCreateModal(false)}>Отмена</button>
-                        <button type="submit" className="btn">Создать</button>
+                        <button type="button" className="btn btn--secondary" onClick={() => setShowCreateModal(false)}>
+                            <i className="fas fa-times"></i> Отмена
+                        </button>
+                        <button type="submit" className="btn">
+                            <i className="fas fa-check"></i> Создать
+                        </button>
                     </div>
                 </form>
             </div>
@@ -78,8 +90,10 @@ const ProjectsList = () => {
     return (
         <>
             <div className="flex-row" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
-                <h2>📂 Мои проекты</h2>
-                <button className="btn" onClick={() => setShowCreateModal(true)}>+ Создать проект</button>
+                <h2><i className="fas fa-folder-open"></i> Мои проекты</h2>
+                <button className="btn" onClick={() => setShowCreateModal(true)}>
+                    <i className="fas fa-plus"></i> Создать проект
+                </button>
             </div>
             {projects.length === 0 ? (
                 <p>У вас пока нет проектов. Нажмите «Создать проект».</p>
@@ -92,13 +106,17 @@ const ProjectsList = () => {
                         const canEdit = role === 'OWNER' || role === 'ADMIN';
                         return (
                             <div className="project-card" key={proj.id}>
-                                <h3>{proj.name}</h3>
-                                <p>👑 Владелец: {proj.owner.fullName}</p>
-                                <p>👥 Участников: {proj.members.length}</p>
+                                <h3><i className="fas fa-project-diagram"></i> {proj.name}</h3>
+                                <p><i className="fas fa-crown"></i> Владелец: {proj.owner.fullName}</p>
+                                <p><i className="fas fa-users"></i> Участников: {proj.members.length}</p>
                                 <div className="flex-row mt-4">
-                                    <button className="btn btn--secondary btn--small" onClick={() => handleOpenBoard(proj.id)}>📌 Открыть доску</button>
+                                    <button className="btn btn--secondary btn--small" onClick={() => handleOpenBoard(proj.id)}>
+                                        <i className="fas fa-chalkboard"></i> Открыть доску
+                                    </button>
                                     {canEdit && (
-                                        <button className="btn btn--small" onClick={() => navigate(`/project/${proj.id}/settings`)}>⚙️ Настройки</button>
+                                        <button className="btn btn--small" onClick={() => navigate(`/project/${proj.id}/settings`)}>
+                                            <i className="fas fa-cog"></i> Настройки
+                                        </button>
                                     )}
                                 </div>
                             </div>

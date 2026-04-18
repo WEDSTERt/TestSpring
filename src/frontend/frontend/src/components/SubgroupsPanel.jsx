@@ -43,7 +43,9 @@ const SubgroupsPanel = ({ projectId, activeSubgroupId, onSelectSubgroup, isOwner
             <div className="groups-header">
                 <h3><i className="fas fa-layer-group"></i> Группы</h3>
                 {(isOwner || isAdmin) && (
-                    <button className="groups-add-btn" onClick={() => setShowCreateModal(true)}>+</button>
+                    <button className="groups-add-btn" onClick={() => setShowCreateModal(true)}>
+                        <i className="fas fa-plus"></i>
+                    </button>
                 )}
             </div>
             <ul className="groups-list">
@@ -54,7 +56,9 @@ const SubgroupsPanel = ({ projectId, activeSubgroupId, onSelectSubgroup, isOwner
                     <li key={group.id} className={`groups-item ${activeSubgroupId === group.id ? 'groups-item--active' : ''}`} onClick={() => onSelectSubgroup(group.id)}>
                         <i className="fas fa-folder"></i> <span>{group.name}</span>
                         {canManageGroup(group) && (
-                            <button className="groups-settings-btn" onClick={(e) => { e.stopPropagation(); setShowSettingsFor(group); }}>⚙️</button>
+                            <button className="groups-settings-btn" onClick={(e) => { e.stopPropagation(); setShowSettingsFor(group); }}>
+                                <i className="fas fa-cog"></i>
+                            </button>
                         )}
                     </li>
                 ))}

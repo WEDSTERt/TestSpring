@@ -9,7 +9,6 @@ import org.springframework.stereotype.Controller;
 import java.time.OffsetDateTime;
 import java.util.List;
 
-
 @Controller
 public class GraphQLController {
 
@@ -95,7 +94,6 @@ public class GraphQLController {
                            @Argument String password) {
         return userService.createUser(fullName, email, password);
     }
-
     @MutationMapping
     public User updateUser(@Argument Long id,
                            @Argument String fullName,

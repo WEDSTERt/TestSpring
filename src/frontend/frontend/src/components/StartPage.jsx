@@ -7,14 +7,14 @@ const StartPage = () => {
     return (
         <div className="start-container">
             <div className="start-card">
-                <h1>📋 Kanban Docky</h1>
+                <h1><i className="fas fa-tasks"></i> Kanban Docky</h1>
                 <p>Управляйте проектами, задачами и командами</p>
                 <div className="start-buttons">
                     <button className="btn-primary" onClick={() => navigate('/login')}>
-                        Вход
+                        <i className="fas fa-sign-in-alt"></i> Вход
                     </button>
                     <button className="btn-outline" onClick={() => navigate('/register')}>
-                        Регистрация
+                        <i className="fas fa-user-plus"></i> Регистрация
                     </button>
                 </div>
             </div>

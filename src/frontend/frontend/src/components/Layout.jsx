@@ -14,14 +14,16 @@ const Layout = ({ children }) => {
     return (
         <div className="app-root">
             <header className="app-navbar">
-                <div className="app-logo">📋 Kanban Docky</div>
+                <div className="app-logo">
+                    <i className="fas fa-tasks"></i> Kanban Docky
+                </div>
                 <div className="app-nav-links">
-                    <Link to="/">📁 Проекты</Link>
+                    <Link to="/"><i className="fas fa-folder-open"></i> Проекты</Link>
                     <span className="app-user-info" onClick={() => navigate('/account')} style={{ cursor: 'pointer' }}>
-            👤 {user?.fullName}
+            <i className="fas fa-user-circle"></i> {user?.fullName}
           </span>
                     <button className="btn btn--secondary btn--small" onClick={handleLogout}>
-                        Выйти
+                        <i className="fas fa-sign-out-alt"></i> Выйти
                     </button>
                 </div>
             </header>

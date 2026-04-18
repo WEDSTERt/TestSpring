@@ -12,6 +12,7 @@ import {
 import { useAuth } from '../contexts/AuthContext';
 import ConfirmModal from './ConfirmModal';
 
+
 const ProjectSettings = () => {
     const { projectId } = useParams();
     const navigate = useNavigate();
@@ -22,6 +23,8 @@ const ProjectSettings = () => {
     const [isError, setIsError] = useState(false);
     const [searchError, setSearchError] = useState('');
     const [deleteConfirm, setDeleteConfirm] = useState({ isOpen: false, memberId: null, isProject: false });
+    const [renameModalOpen, setRenameModalOpen] = useState(false);
+    const [newProjectName, setNewProjectName] = useState('');
 
     const { loading, error, data, refetch } = useQuery(GET_PROJECT_DETAILS, { variables: { projectId } });
     const { data: usersData } = useQuery(GET_USERS, { variables: { limit: 100 } });
@@ -45,14 +48,17 @@ const ProjectSettings = () => {
     if (!canManage) return <div className="message-error">У вас нет прав на управление этим проектом.</div>;
 
     const handleUpdateName = async () => {
-        const newName = prompt('Введите новое название проекта', project.name);
-        if (newName && newName.trim()) {
-            try {
-                await updateProject({ variables: { id: projectId, name: newName } });
-                refetch();
-                setMessage('Название обновлено');
-                setIsError(false);
-            } catch (err) { setMessage(err.message); setIsError(true); }
+        if (!newProjectName.trim()) return;
+        try {
+            await updateProject({ variables: { id: projectId, name: newProjectName.trim() } });
+            refetch();
+            setMessage('Название обновлено');
+            setIsError(false);
+            setRenameModalOpen(false);
+            setNewProjectName('');
+        } catch (err) {
+            setMessage(err.message);
+            setIsError(true);
         }
     };
 
@@ -62,7 +68,10 @@ const ProjectSettings = () => {
             refetch();
             setMessage('Роль обновлена');
             setIsError(false);
-        } catch (err) { setMessage(err.message); setIsError(true); }
+        } catch (err) {
+            setMessage(err.message);
+            setIsError(true);
+        }
     };
 
     const handleRemoveMember = (memberId) => setDeleteConfirm({ isOpen: true, memberId, isProject: false });
@@ -88,7 +97,10 @@ const ProjectSettings = () => {
             setNewMemberEmail('');
             setMessage('Участник добавлен');
             setIsError(false);
-        } catch (err) { setMessage(err.message); setIsError(true); }
+        } catch (err) {
+            setMessage(err.message);
+            setIsError(true);
+        }
     };
 
     const handleDeleteProject = () => setDeleteConfirm({ isOpen: true, isProject: true });
@@ -97,49 +109,104 @@ const ProjectSettings = () => {
         setDeleteConfirm({ isOpen: false, isProject: false });
     };
 
+    const openRenameModal = () => {
+        setNewProjectName(project.name);
+        setRenameModalOpen(true);
+    };
+
     return (
         <div style={{ position: 'relative' }}>
-            <button className="modal-close--settings" onClick={() => navigate('/')}>✕</button>
-            <h2>⚙️ Настройки проекта</h2>
+            <button className="modal-close--settings" onClick={() => navigate(-1)}>✕</button>
+            <h2><i className="fas fa-cog"></i> Настройки проекта</h2>
             <div className="card">
-                <h3>📝 Основное</h3>
+                <h3><i className="fas fa-pen"></i> Основное</h3>
                 <div className="form-group">
-                    <label className="form-label">Название проекта</label>
-                    <input className="form-input" type="text" value={project.name} readOnly />
+                    <label className="form-label" htmlFor="project-name">Название проекта</label>
+                    <input className="form-input" type="text" id="project-name" value={project.name} readOnly />
                 </div>
-                <button className="btn btn--secondary" onClick={handleUpdateName}>Изменить название</button>
+                <button className="btn btn--secondary" onClick={openRenameModal}>
+                    <i className="fas fa-edit"></i> Изменить название
+                </button>
+
                 <div className="divider" />
-                <h3>👥 Участники</h3>
+
+                <h3><i className="fas fa-users"></i> Участники</h3>
                 <div>
                     {project.members.map((m) => (
                         <div key={m.id} className="flex-row" style={{ justifyContent: 'space-between', marginBottom: 12 }}>
                             <span><strong>{m.user.fullName}</strong> ({m.user.email}) <span className="badge-role">{m.role}</span></span>
                             <div className="flex-row">
-                                <select className="form-select" value={m.role} onChange={(e) => handleRoleChange(m.id, e.target.value)} style={{ width: 'auto' }}>
-                                    <option value="ADMIN">Админ</option><option value="MEMBER">Участник</option><option value="VIEWER">Наблюдатель</option>
+                                <select
+                                    className="form-select"
+                                    id={`role-select-${m.id}`}
+                                    value={m.role}
+                                    onChange={(e) => handleRoleChange(m.id, e.target.value)}
+                                    style={{ width: 'auto' }}
+                                >
+                                    <option value="ADMIN">Админ</option>
+                                    <option value="MEMBER">Участник</option>
+                                    <option value="VIEWER">Наблюдатель</option>
                                 </select>
-                                <button className="btn btn--danger btn--small" onClick={() => handleRemoveMember(m.id)} disabled={m.userId === project.owner.id}>Удалить</button>
+                                <button className="btn btn--danger btn--small" onClick={() => handleRemoveMember(m.id)} disabled={m.userId === project.owner.id}>
+                                    <i className="fas fa-user-minus"></i> Удалить
+                                </button>
                             </div>
                         </div>
                     ))}
                 </div>
                 <form onSubmit={handleAddMember} className="mt-4">
                     <div className="form-group">
-                        <label className="form-label">Добавить участника по email</label>
+                        <label className="form-label" htmlFor="new-member-email">Добавить участника по email</label>
                         <div className="flex-row">
-                            <input className="form-input" type="email" value={newMemberEmail} onChange={(e) => setNewMemberEmail(e.target.value)} placeholder="Email пользователя" style={{ flex: 2 }} />
-                            <select className="form-select" value={newMemberRole} onChange={(e) => setNewMemberRole(e.target.value)} style={{ flex: 1 }}>
-                                <option value="ADMIN">Админ</option><option value="MEMBER">Участник</option><option value="VIEWER">Наблюдатель</option>
+                            <input className="form-input" type="email" id="new-member-email" value={newMemberEmail} onChange={(e) => setNewMemberEmail(e.target.value)} placeholder="Email пользователя" style={{ flex: 2 }} />
+                            <select className="form-select" id="new-member-role" value={newMemberRole} onChange={(e) => setNewMemberRole(e.target.value)} style={{ flex: 1 }}>
+                                <option value="ADMIN">Админ</option>
+                                <option value="MEMBER">Участник</option>
+                                <option value="VIEWER">Наблюдатель</option>
                             </select>
-                            <button type="submit" className="btn">Добавить</button>
+                            <button type="submit" className="btn">
+                                <i className="fas fa-user-plus"></i> Добавить
+                            </button>
                         </div>
                         {searchError && <div className="message-error" style={{ marginTop: '8px' }}>{searchError}</div>}
                     </div>
                 </form>
                 <div className="divider" />
-                <button className="btn btn--danger" onClick={handleDeleteProject}>🗑️ Удалить проект</button>
+                <button className="btn btn--danger" onClick={handleDeleteProject}>
+                    <i className="fas fa-trash-alt"></i> Удалить проект
+                </button>
                 {message && <div className={`mt-4 ${isError ? 'message-error' : 'message-success'}`}>{message}</div>}
             </div>
+
+            {/* Модальное окно переименования проекта */}
+            {renameModalOpen && (
+                <div className="modal-overlay" onClick={() => setRenameModalOpen(false)}>
+                    <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                        <button className="modal-close" onClick={() => setRenameModalOpen(false)}>✕</button>
+                        <h3><i className="fas fa-edit"></i> Переименовать проект</h3>
+                        <div className="form-group">
+                            <label className="form-label" htmlFor="rename-project-name">Название проекта</label>
+                            <input
+                                className="form-input"
+                                type="text"
+                                id="rename-project-name"
+                                value={newProjectName}
+                                onChange={(e) => setNewProjectName(e.target.value)}
+                                autoFocus
+                            />
+                        </div>
+                        <div className="flex-row" style={{ justifyContent: 'flex-end', gap: '8px', marginTop: '16px' }}>
+                            <button className="btn btn--secondary" onClick={() => setRenameModalOpen(false)}>
+                                <i className="fas fa-times"></i> Отмена
+                            </button>
+                            <button className="btn" onClick={handleUpdateName}>
+                                <i className="fas fa-save"></i> Сохранить
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             <ConfirmModal
                 isOpen={deleteConfirm.isOpen}
                 title={deleteConfirm.isProject ? "Удаление проекта" : "Удаление участника"}

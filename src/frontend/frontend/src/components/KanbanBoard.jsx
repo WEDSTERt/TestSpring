@@ -95,7 +95,11 @@ const KanbanBoard = () => {
         return new Date(a.dueDate) - new Date(b.dueDate);
     };
 
-    const statusLabels = { TODO: '📝 Создано', IN_PROGRESS: '⚡ В разработке', REVIEW: '✅ Выполнено' };
+    const statusLabels = {
+        TODO: <><i className="fas fa-clipboard-list"></i> Создано</>,
+        IN_PROGRESS: <><i className="fas fa-spinner fa-pulse"></i> В разработке</>,
+        REVIEW: <><i className="fas fa-check-circle"></i> Выполнено</>,
+    };
     const statusColors = { TODO: '#3b82f6', IN_PROGRESS: '#f59e0b', REVIEW: '#10b981' };
 
     const tasksByStatus = {
@@ -223,11 +227,15 @@ const KanbanBoard = () => {
             <div className="kanban-container">
                 <div className="kanban-header">
                     <div className="kanban-title-area">
-                        <h2 className="kanban-title">{project.name}</h2>
-                        <button className="btn" onClick={handleCreateTask}>+ Новая задача</button>
+                        <h2 className="kanban-title"><i className="fas fa-chalkboard    "></i> {project.name}</h2>
+                        <button className="btn" onClick={handleCreateTask}>
+                            <i className="fas fa-plus"></i> Новая задача
+                        </button>
                     </div>
                     {canEditProject && (
-                        <button className="btn btn--secondary" onClick={() => navigate(`/project/${projectId}/settings`)}>⚙️ Настройки проекта</button>
+                        <button className="btn btn--secondary" onClick={() => navigate(`/project/${projectId}/settings`)}>
+                            <i className="fas fa-cog"></i> Настройки проекта
+                        </button>
                     )}
                 </div>
                 {isLoading && <div className="loading">Загрузка задач...</div>}
@@ -254,9 +262,11 @@ const KanbanBoard = () => {
                                                 {task.dueDate && <div className="task-date">📅 {new Date(task.dueDate).toLocaleDateString()}</div>}
                                             </div>
                                             <div className="task-assignees">
-                                                {task.assignees?.map(a => <span key={a.id}>{a.fullName}</span>)}
+                                                {task.assignees?.map(a => <span key={a.id}><i className="fas fa-user"></i> {a.fullName}</span>)}
                                             </div>
-                                            <button className="task-delete-btn" onClick={(e) => { e.stopPropagation(); handleDeleteTask(task.id); }}>🗑️</button>
+                                            <button className="task-delete-btn" onClick={(e) => { e.stopPropagation(); handleDeleteTask(task.id); }}>
+                                                <i className="fas fa-trash-alt"></i>
+                                            </button>
                                         </div>
                                     ))}
                                 </div>

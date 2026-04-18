@@ -93,7 +93,31 @@ body {
   opacity: 0.6;
   cursor: not-allowed;
 }
+.password-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
 
+.password-row .form-input {
+  flex: 1;
+}
+
+.password-toggle {
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 8px;
+  color: #64748b;
+  transition: color 0.15s;
+  width: auto;
+}
+
+.password-toggle:hover {
+  background: none;
+  color: #2563eb;
+}
 /* ============================================
    Карточки и формы
    ============================================ */
@@ -282,17 +306,31 @@ body {
   color: #64748b;
 }
 .modal-close:hover { color: #ef4444; }
+
 .modal-close--settings {
   position: absolute;
   top: 20px;
   right: 20px;
-  background: none;
-  border: none;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 30px;
+  width: 32px;
+  height: 32px;
   font-size: 1.2rem;
   cursor: pointer;
   color: #64748b;
+  z-index: 100;  /* повышен z-index */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
 }
-.modal-close--settings:hover { color: #ef4444; }
+
+.modal-close--settings:hover {
+  background: #ef4444;
+  color: white;
+  border-color: #ef4444;
+}
 
 /* Confirm modal */
 .modal-confirm {

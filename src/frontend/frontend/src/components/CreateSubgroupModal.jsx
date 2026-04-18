@@ -35,13 +35,17 @@ const CreateSubgroupModal = ({ projectId, existingSubgroups, onClose, onCreated 
                 <h3>Создать новую группу</h3>
                 <form onSubmit={handleSubmit}>
                     <div className="form-group">
-                        <label className="form-label">Название группы</label>
-                        <input className="form-input" type="text" value={name} onChange={(e) => setName(e.target.value)} autoFocus required />
+                        <label className="form-label" htmlFor="subgroup-name">Название группы</label>
+                        <input className="form-input" type="text" id="subgroup-name" value={name} onChange={(e) => setName(e.target.value)} autoFocus required />
                     </div>
                     {error && <div className="message-error">{error}</div>}
                     <div className="modal-actions">
-                        <button type="button" className="btn btn--secondary" onClick={onClose}>Отмена</button>
-                        <button type="submit" className="btn">Создать</button>
+                        <button type="button" className="btn btn--secondary" onClick={onClose}>
+                            <i className="fas fa-times"></i> Отмена
+                        </button>
+                        <button type="submit" className="btn">
+                            <i className="fas fa-plus"></i> Создать
+                        </button>
                     </div>
                 </form>
             </div>

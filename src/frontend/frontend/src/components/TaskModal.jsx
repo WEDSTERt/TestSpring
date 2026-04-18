@@ -66,43 +66,93 @@ const TaskModal = ({ task, subgroupId, assignableUsers, initialAssigneeIds, onSa
                 <button className="modal-close" onClick={onClose}>✕</button>
                 <h3>{task ? 'Редактировать задачу' : 'Новая задача'}</h3>
                 <form onSubmit={handleSubmit}>
+                    {/* Название */}
                     <div className="form-group">
-                        <label className="form-label">Название *</label>
-                        <input className="form-input" type="text" value={title} onChange={(e) => setTitle(e.target.value)} required />
+                        <label className="form-label" htmlFor="task-title">Название *</label>
+                        <input
+                            className="form-input"
+                            type="text"
+                            id="task-title"
+                            value={title}
+                            onChange={(e) => setTitle(e.target.value)}
+                            required
+                        />
                     </div>
+
+                    {/* Описание */}
                     <div className="form-group">
-                        <label className="form-label">Описание</label>
-                        <textarea className="form-textarea" value={description} onChange={(e) => setDescription(e.target.value)} rows="3" />
+                        <label className="form-label" htmlFor="task-desc">Описание</label>
+                        <textarea
+                            className="form-textarea"
+                            id="task-desc"
+                            value={description}
+                            onChange={(e) => setDescription(e.target.value)}
+                            rows="3"
+                        />
                     </div>
+
+                    {/* Дедлайн */}
                     <div className="form-group">
-                        <label className="form-label">Дедлайн</label>
-                        <input className="form-input" type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
+                        <label className="form-label" htmlFor="task-due">Дедлайн</label>
+                        <input
+                            className="form-input"
+                            type="date"
+                            id="task-due"
+                            value={dueDate}
+                            onChange={(e) => setDueDate(e.target.value)}
+                        />
                     </div>
+
+                    {/* Статус */}
                     <div className="form-group">
-                        <label className="form-label">Статус</label>
-                        <select className="form-select" value={status} onChange={(e) => setStatus(e.target.value)}>
+                        <label className="form-label" htmlFor="task-status">Статус</label>
+                        <select
+                            className="form-select"
+                            id="task-status"
+                            value={status}
+                            onChange={(e) => setStatus(e.target.value)}
+                        >
                             <option value="TODO">Создано</option>
                             <option value="IN_PROGRESS">В разработке</option>
                             <option value="REVIEW">Выполнено</option>
                         </select>
                     </div>
+
+                    {/* Важность */}
                     <div className="form-group">
-                        <label className="form-label">Важность</label>
-                        <select className="form-select" value={priority} onChange={(e) => setPriority(e.target.value)}>
-                            <option value="1">Низкая</option><option value="2">Средняя</option><option value="3">Высокая</option>
+                        <label className="form-label" htmlFor="task-priority">Важность</label>
+                        <select
+                            className="form-select"
+                            id="task-priority"
+                            value={priority}
+                            onChange={(e) => setPriority(e.target.value)}
+                        >
+                            <option value="1">Низкая</option>
+                            <option value="2">Средняя</option>
+                            <option value="3">Высокая</option>
                         </select>
                     </div>
-                    <div className="form-group">
-                        <label className="form-label">Исполнители (только участники текущей подгруппы)</label>
+
+                    {/* Исполнители (чекбоксы) */}
+                    <fieldset className="form-group">
+                        <legend className="form-label">Исполнители (только участники текущей подгруппы)</legend>
                         <div className="assignees-checkbox-list">
                             {assignableUsers.map(member => (
                                 <label key={member.userId} className="assignees-checkbox-label">
-                                    <input type="checkbox" checked={assigneeIds.includes(member.userId)} onChange={() => handleAssigneeToggle(member.userId)} />
+                                    <input
+                                        type="checkbox"
+                                        id={`assignee-${member.userId}`}
+                                        name="assignees"
+                                        checked={assigneeIds.includes(member.userId)}
+                                        onChange={() => handleAssigneeToggle(member.userId)}
+                                    />
                                     {member.user?.fullName || `Пользователь ${member.userId}`}
                                 </label>
                             ))}
                         </div>
-                    </div>
+                    </fieldset>
+
+                    {/* Кнопки */}
                     <div className="modal-actions">
                         <button type="button" className="btn btn--secondary" onClick={onClose}>Отмена</button>
                         <button type="submit" className="btn">Сохранить</button>

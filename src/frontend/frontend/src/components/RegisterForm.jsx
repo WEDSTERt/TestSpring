@@ -9,6 +9,7 @@ const RegisterForm = () => {
     const [fullName, setFullName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
     const [localError, setLocalError] = useState('');
     const [validationError, setValidationError] = useState('');
     const navigate = useNavigate();
@@ -49,25 +50,64 @@ const RegisterForm = () => {
 
     return (
         <div className="card" style={{ maxWidth: 460, margin: '40px auto' }}>
-            <h2>📝 Создать аккаунт</h2>
+            <h2><i className="fas fa-user-plus"></i> Создать аккаунт</h2>
             <form onSubmit={handleSubmit}>
                 <div className="form-group">
-                    <label className="form-label">Имя и фамилия (введите корректно)</label>
-                    <input className="form-input" type="text" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Иван Иванов" required />
+                    <label className="form-label" htmlFor="reg-fullname">Имя и фамилия</label>
+                    <input
+                        className="form-input"
+                        type="text"
+                        id="reg-fullname"
+                        placeholder="Иван Иванов"
+                        value={fullName}
+                        onChange={(e) => setFullName(e.target.value)}
+                        required
+                    />
                 </div>
                 <div className="form-group">
-                    <label className="form-label">Email</label>
-                    <input className="form-input" type="email" value={email} placeholder="name@example.com" onChange={(e) => setEmail(e.target.value)} required />
+                    <label className="form-label" htmlFor="reg-email">Email</label>
+                    <input
+                        className="form-input"
+                        type="email"
+                        id="reg-email"
+                        placeholder="ivan@example.com"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        required
+                    />
                 </div>
                 <div className="form-group">
-                    <label className="form-label">Пароль (латиница, цифры, спецсимволы)</label>
-                    <input className="form-input" type="password" value={password} placeholder="******" onChange={(e) => setPassword(e.target.value)} required />
+                    <label className="form-label" htmlFor="reg-password">Пароль</label>
+                    <div className="password-row">
+                        <input
+                            className="form-input"
+                            type={showPassword ? 'text' : 'password'}
+                            id="reg-password"
+                            placeholder="••••••••"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            required
+                        />
+                        <button
+                            type="button"
+                            className="password-toggle"
+                            onClick={() => setShowPassword(!showPassword)}
+                        >
+                            <i className={showPassword ? 'fas fa-eye' : 'fas fa-eye-slash'}></i>
+                        </button>
+                    </div>
                 </div>
                 {validationError && <div className="message-error">{validationError}</div>}
                 {localError && <div className="message-error">{localError}</div>}
                 <div className="flex-row">
-                    <button type="submit" className="btn" disabled={loading}>Зарегистрироваться</button>
-                    <Link to="/login"><button type="button" className="btn btn--secondary">Отмена</button></Link>
+                    <button type="submit" className="btn" disabled={loading}>
+                        <i className="fas fa-user-plus"></i> Зарегистрироваться
+                    </button>
+                    <Link to="/login">
+                        <button type="button" className="btn btn--secondary">
+                            <i className="fas fa-times"></i> Отмена
+                        </button>
+                    </Link>
                 </div>
             </form>
         </div>
