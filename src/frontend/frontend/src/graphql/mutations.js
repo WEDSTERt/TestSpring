@@ -1,24 +1,5 @@
 import { gql } from '@apollo/client';
 
-export const LOGIN = gql`
-    mutation Login($email: String!, $password: String!) {
-        login(email: $email, password: $password) {
-            id
-            fullName
-            email
-        }
-    }
-`;
-
-export const REGISTER = gql`
-    mutation CreateUser($fullName: String!, $email: String!, $password: String!) {
-        createUser(fullName: $fullName, email: $email, password: $password) {
-            id
-            fullName
-            email
-        }
-    }
-`;
 
 export const UPDATE_USER = gql`
     mutation UpdateUser($id: ID!, $fullName: String, $password: String) {
@@ -235,6 +216,31 @@ export const UNASSIGN_USER_FROM_TASK = gql`
     unassignUserFromTask(taskId: $taskId, userId: $userId) {
       id
       assignees { id fullName }
+    }
+  }
+`;
+export const LOGIN = gql`
+  mutation Login($email: String!, $password: String!) {
+    login(email: $email, password: $password) {
+      token
+      user {
+        id
+        fullName
+        email
+      }
+    }
+  }
+`;
+
+export const REGISTER = gql`
+  mutation CreateUser($fullName: String!, $email: String!, $password: String!) {
+    createUser(fullName: $fullName, email: $email, password: $password) {
+      token
+      user {
+        id
+        fullName
+        email
+      }
     }
   }
 `;

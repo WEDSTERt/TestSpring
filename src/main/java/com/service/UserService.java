@@ -24,6 +24,15 @@ public class UserService {
 
     @Transactional
     public User createUser(String fullName, String email, String password) {
+        if (!email.matches("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$")) {
+            throw new RuntimeException("Invalid email format");
+        }
+        if (!fullName.matches("^[А-ЯЁ][а-яё]+\\s[А-ЯЁ][а-яё]+$")) {
+            throw new RuntimeException("Full name must be two Cyrillic words with capital first letters");
+        }
+        if (!password.matches("^[A-Za-z0-9!\"#$%&'()*+,-./:;<=>?@\\[\\]^_]{6,}$")) {
+            throw new RuntimeException("Password must be at least 6 characters, only Latin letters, digits and allowed special chars");
+        }
         if (userRepository.findByEmail(email).isPresent()) {
             throw new RuntimeException("Email already exists");
         }

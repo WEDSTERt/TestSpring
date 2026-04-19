@@ -123,14 +123,18 @@ public class TaskService {
 
     // ----- ВЛОЖЕНИЯ (хранятся в БД) -----
     @Transactional
-    public Attachment addAttachment(Long taskId, MultipartFile file) throws IOException {
+    public Attachment addAttachment(Long taskId, MultipartFile file) {
         Task task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new RuntimeException("Task not found"));
         Attachment attachment = new Attachment();
         attachment.setFileName(file.getOriginalFilename());
         attachment.setFileType(file.getContentType());
         attachment.setFileSize(file.getSize());
-        attachment.setFileData(file.getBytes());
+        try {
+            attachment.setFileData(file.getBytes());
+        } catch (java.io.IOException e) {
+            throw new RuntimeException("Failed to read file", e);
+        }
         attachment.setTask(task);
         return attachmentRepository.save(attachment);
     }

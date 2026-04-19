@@ -27,9 +27,10 @@ const RegisterForm = () => {
         }
     }, [data, error, login, navigate]);
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
         setValidationError('');
+        setLocalError('');
         const nameValidation = validateFullName(fullName);
         if (!nameValidation.isValid) {
             setValidationError(nameValidation.error);
@@ -44,8 +45,12 @@ const RegisterForm = () => {
             setLocalError('Введите корректный email');
             return;
         }
-        setLocalError('');
-        registerMutation({ variables: { fullName: fullName.trim(), email, password } });
+        try {
+            await register(fullName, email, password);
+            navigate('/');
+        } catch (err) {
+            setLocalError(err.message);
+        }
     };
 
     return (

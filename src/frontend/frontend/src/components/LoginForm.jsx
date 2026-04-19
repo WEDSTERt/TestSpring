@@ -28,15 +28,12 @@ const LoginForm = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-            setLocalError('Введите корректный email');
-            return;
-        }
         setLocalError('');
         try {
-            await loginMutation({ variables: { email, password } });
-        } catch {
-            // ошибка уже обработана в useEffect
+            await login(email, password);
+            navigate('/'); // перенаправление после того, как пользователь установлен
+        } catch (err) {
+            setLocalError(err.message);
         }
     };
 

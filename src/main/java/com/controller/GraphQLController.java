@@ -3,9 +3,14 @@ package com.controller;
 import com.entity.*;
 import com.repository.UserRepository;
 import com.service.*;
+import com.config.JwtUtil;
 import org.springframework.graphql.data.method.annotation.*;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.multipart.MultipartFile;
 import java.time.OffsetDateTime;
 import java.util.List;
 
@@ -18,17 +23,22 @@ public class GraphQLController {
     private final TaskService taskService;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final JwtUtil jwtUtil;
 
     public GraphQLController(UserService userService,
                              ProjectService projectService,
                              SubgroupService subgroupService,
-                             TaskService taskService, UserRepository userRepository, PasswordEncoder passwordEncoder) {
+                             TaskService taskService,
+                             UserRepository userRepository,
+                             PasswordEncoder passwordEncoder,
+                             JwtUtil jwtUtil) {
         this.userService = userService;
         this.projectService = projectService;
         this.subgroupService = subgroupService;
         this.taskService = taskService;
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.jwtUtil = jwtUtil;
     }
 
     // ---------- QUERY ----------
@@ -66,10 +76,7 @@ public class GraphQLController {
     public List<Subgroup> subgroupsByProject(@Argument Long projectId) {
         return subgroupService.findSubgroupsByProject(projectId);
     }
-    @QueryMapping
-    public List<Attachment> taskAttachments(@Argument Long taskId) {
-        return taskService.getAttachmentsByTask(taskId);
-    }
+
     @QueryMapping
     public Task task(@Argument Long id) {
         return taskService.findById(id).orElse(null);
@@ -90,13 +97,42 @@ public class GraphQLController {
         return taskService.findTasksByCreator(createdByUserId);
     }
 
+    @QueryMapping
+    public List<Attachment> taskAttachments(@Argument Long taskId) {
+        return taskService.getAttachmentsByTask(taskId);
+    }
+
+    @QueryMapping
+    public User me() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.isAuthenticated() && auth.getPrincipal() instanceof UserDetails) {
+            UserDetails userDetails = (UserDetails) auth.getPrincipal();
+            Long userId = Long.parseLong(userDetails.getUsername());
+            return userService.findById(userId).orElse(null);
+        }
+        return null;
+    }
+
     // ---------- MUTATION ----------
     @MutationMapping
-    public User createUser(@Argument String fullName,
-                           @Argument String email,
-                           @Argument String password) {
-        return userService.createUser(fullName, email, password);
+    public AuthPayload createUser(@Argument String fullName,
+                                  @Argument String email,
+                                  @Argument String password) {
+        User user = userService.createUser(fullName, email, password);
+        String token = jwtUtil.generateToken(user.getId(), user.getEmail());
+        return new AuthPayload(token, user);
     }
+
+    @MutationMapping
+    public AuthPayload login(@Argument String email, @Argument String password) {
+        User user = userService.login(email, password);
+        if (user == null) {
+            throw new RuntimeException("Invalid email or password");
+        }
+        String token = jwtUtil.generateToken(user.getId(), user.getEmail());
+        return new AuthPayload(token, user);
+    }
+
     @MutationMapping
     public User updateUser(@Argument Long id,
                            @Argument String fullName,
@@ -104,13 +140,7 @@ public class GraphQLController {
                            @Argument String password) {
         return userService.updateUser(id, fullName, email, password);
     }
-    @MutationMapping
-    public User login(@Argument String email, @Argument String password) {
-        User user = userRepository.findByEmail(email).orElse(null);
-        if (user == null) return null;
-        if (!passwordEncoder.matches(password, user.getUserPassword())) return null;
-        return user;
-    }
+
     @MutationMapping
     public boolean deleteUser(@Argument Long id) {
         return userService.deleteUser(id);
@@ -235,6 +265,17 @@ public class GraphQLController {
         return taskService.setTaskAssignees(taskId, userIds);
     }
 
+    @MutationMapping
+    public Attachment addAttachment(@Argument Long taskId, @Argument MultipartFile file) {
+        return taskService.addAttachment(taskId, file);
+    }
+
+    @MutationMapping
+    public boolean deleteAttachment(@Argument Long id) {
+        taskService.deleteAttachment(id);
+        return true;
+    }
+
     // ---------- FIELD RESOLVERS (для избежания проблемы N+1) ----------
     @SchemaMapping(typeName = "User", field = "ownedProjects")
     public List<Project> ownedProjects(User user) {
@@ -331,4 +372,8 @@ public class GraphQLController {
         return task.getStatus();
     }
 
+    @SchemaMapping(typeName = "Task", field = "attachments")
+    public List<Attachment> taskAttachmentsResolver(Task task) {
+        return task.getAttachments();
+    }
 }

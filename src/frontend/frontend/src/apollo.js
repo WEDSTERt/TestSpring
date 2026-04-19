@@ -6,7 +6,7 @@ const graphqlUri = import.meta.env.VITE_GRAPHQL_URL || '/graphql';
 const httpLink = createHttpLink({ uri: graphqlUri });
 
 const authLink = setContext((_, { headers }) => {
-    const token = localStorage.getItem('authToken');
+    const token = localStorage.getItem('jwtToken');
     return {
         headers: {
             ...headers,

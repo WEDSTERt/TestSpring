@@ -83,10 +83,7 @@ type Task {
     updatedAt: DateTime!
     assignees: [User!]!
 }
-type AuthPayload {
-    token: String!
-    user: User!
-}
+
 type Attachment {
     id: ID!
     fileName: String!
@@ -100,6 +97,10 @@ extend type Task {
 }
 extend type Query {
     taskAttachments(taskId: ID!): [Attachment!]!
+}
+type AuthPayload {
+    token: String!
+    user: User!
 }
 # ==================== QUERIES ====================
 
@@ -123,17 +124,18 @@ type Query {
     tasksBySubgroup(subgroupId: ID!): [Task!]!
     tasksByAssignee(userId: ID!): [Task!]!
     tasksByCreator(createdByUserId: ID!): [Task!]!
+    me: User
 }
 
 # ==================== MUTATIONS ====================
 
 type Mutation {
     # ----- ПОЛЬЗОВАТЕЛИ -----
-    createUser(fullName: String!, email: String!, password: String!): User!
     updateUser(id: ID!, fullName: String, email: String, password: String): User!
     deleteUser(id: ID!): Boolean!
-    login(email: String!, password: String!): User
 
+    login(email: String!, password: String!): AuthPayload!
+    createUser(fullName: String!, email: String!, password: String!): AuthPayload!
     # ----- ПРОЕКТЫ -----
     createProject(name: String!, ownerUserId: ID!): Project!
     updateProject(id: ID!, name: String): Project!

@@ -1,14 +1,5 @@
 import { gql } from '@apollo/client';
 
-export const GET_CURRENT_USER = gql`
-  query GetCurrentUser($id: ID!) {
-    user(id: $id) {
-      id
-      fullName
-      email
-    }
-  }
-`;
 
 export const GET_USER_PROJECTS = gql`
   query GetUserProjects($userId: ID!) {
@@ -166,7 +157,15 @@ export const GET_TASKS_BY_SUBGROUP = gql`
         }
     }
 `;
-
+export const GET_CURRENT_USER = gql`
+  query GetCurrentUser {
+    me {
+      id
+      fullName
+      email
+    }
+  }
+`;
 export const GET_TASKS_BY_ASSIGNEE = gql`
     query GetTasksByAssignee($userId: ID!) {
         tasksByAssignee(userId: $userId) {
