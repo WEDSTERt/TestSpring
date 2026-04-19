@@ -150,6 +150,7 @@ export const GET_TASK_ATTACHMENTS = gql`
     }
   }
 `;
+
 export const GET_TASKS_BY_SUBGROUP = gql`
     query GetTasksBySubgroup($subgroupId: ID!) {
         tasksBySubgroup(subgroupId: $subgroupId) {
@@ -160,7 +161,7 @@ export const GET_TASKS_BY_SUBGROUP = gql`
             status
             value
             createdBy { id fullName }
-            assignees { id fullName }
+            assignees { id fullName email }
             attachments { id }
         }
     }
@@ -176,7 +177,7 @@ export const GET_TASKS_BY_ASSIGNEE = gql`
             status
             value
             createdBy { id fullName }
-            assignees { id fullName }
+            assignees { id fullName email }
             subgroupId
             subgroup { id name }
             attachments { id }

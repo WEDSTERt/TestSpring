@@ -340,7 +340,14 @@ const KanbanBoard = () => {
                                                 )}
                                             </div>
                                             <div className="task-assignees">
-                                                {task.assignees?.map(a => <span key={a.id}><i className="fas fa-user"></i> {a.fullName}</span>)}
+                                                {task.assignees?.map(a => (
+                                                    <div key={a.id} className="assignee-wrapper">
+            <span className="assignee-name">
+                <i className="fas fa-user"></i> {a.fullName}
+            </span>
+                                                        <span className="assignee-tooltip">{a.email}</span>
+                                                    </div>
+                                                ))}
                                             </div>
                                             {activeSubgroupId !== 'my-tasks' && (
                                                 <button className="task-delete-btn" onClick={(e) => { e.stopPropagation(); handleDeleteTask(task.id); }}>

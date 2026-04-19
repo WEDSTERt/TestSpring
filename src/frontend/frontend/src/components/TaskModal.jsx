@@ -180,7 +180,7 @@ const TaskModal = ({
     if (task && !isEditing) {
         return (
             <div className="modal-overlay" onClick={onClose}>
-                <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                <div className="modal-content task-view-modal" onClick={(e) => e.stopPropagation()}>
                     <button className="modal-close" onClick={onClose}>✕</button>
                     <h3>Просмотр задачи</h3>
                     <div className="form-group">
@@ -189,12 +189,14 @@ const TaskModal = ({
                     </div>
                     <div className="form-group">
                         <label className="form-label">Описание</label>
-                        <div className="form-input" style={{ background: '#f8fafc', whiteSpace: 'pre-wrap' }}>{task.description || '—'}</div>
+                        <div className="form-input task-description-view">
+                            {task.description || '—'}
+                        </div>
                     </div>
                     <div className="form-group">
                         <label className="form-label">Дедлайн (дата и время)</label>
                         <div className="form-input" style={{ background: '#f8fafc' }}>
-                            {task.dueDate ? new Date(task.dueDate).toLocaleString() : '—'}
+                            {task.dueDate ? new Date(task.dueDate).toLocaleString([], { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }) : '—'}
                         </div>
                     </div>
                     <div className="form-group">
