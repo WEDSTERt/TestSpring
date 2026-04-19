@@ -4,8 +4,9 @@ import 'react-datepicker/dist/react-datepicker.css';
 import { useQuery } from '@apollo/client';
 import { GET_TASK_ATTACHMENTS } from '../graphql/queries';
 import AttachmentList from './AttachmentList';
+import ConfirmModal from './ConfirmModal';
 
-const TaskModal = ({ task, subgroupId, assignableUsers, initialAssigneeIds, onSave, onClose }) => {
+const TaskModal = ({ task, subgroupId, assignableUsers, initialAssigneeIds, onSave, onDeleteTask, isMyTasksGroup, onClose }) => {
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
     const [dueDate, setDueDate] = useState(null);
@@ -13,9 +14,9 @@ const TaskModal = ({ task, subgroupId, assignableUsers, initialAssigneeIds, onSa
     const [priority, setPriority] = useState(2);
     const [assigneeIds, setAssigneeIds] = useState([]);
     const [uploading, setUploading] = useState(false);
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const users = assignableUsers || [];
-
-    // Запрос списка вложений (только для существующей задачи)
+    const [isSaving, setIsSaving] = useState(false);
     const { data: attachmentsData, refetch: refetchAttachments } = useQuery(GET_TASK_ATTACHMENTS, {
         variables: { taskId: task?.id },
         skip: !task?.id,
@@ -50,28 +51,39 @@ const TaskModal = ({ task, subgroupId, assignableUsers, initialAssigneeIds, onSa
         setDueDate(new Date());
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
         if (!title.trim()) {
             alert('Введите название задачи');
             return;
         }
-        let dueDateISO = null;
-        if (dueDate) {
-            if (dueDate < new Date()) {
-                alert('Нельзя установить дедлайн в прошлом');
-                return;
+        if (isSaving) return;
+        setIsSaving(true);
+        try {
+            let dueDateISO = null;
+            if (dueDate) {
+                if (dueDate < new Date()) {
+                    alert('Нельзя установить дедлайн в прошлом');
+                    return;
+                }
+                dueDateISO = dueDate.toISOString();
             }
-            dueDateISO = dueDate.toISOString();
+            await onSave({
+                title: title.trim(),
+                description: description.trim() || null,
+                dueDate: dueDateISO,
+                status,
+                value: parseInt(priority),
+                assigneeIds,
+            });
+            // onSave уже закрывает модалку, но нам нужно вызвать onClose для сброса флага
+            onClose();
+        } catch (err) {
+            console.error(err);
+            alert('Ошибка сохранения');
+        } finally {
+            setIsSaving(false);
         }
-        onSave({
-            title: title.trim(),
-            description: description.trim() || null,
-            dueDate: dueDateISO,
-            status,
-            value: parseInt(priority),
-            assigneeIds,
-        });
     };
 
     const handleAssigneeToggle = (userId) => {
@@ -80,7 +92,6 @@ const TaskModal = ({ task, subgroupId, assignableUsers, initialAssigneeIds, onSa
         );
     };
 
-    // Загрузка файла через REST
     const handleFileUpload = async (e) => {
         const file = e.target.files[0];
         if (!file) return;
@@ -91,9 +102,7 @@ const TaskModal = ({ task, subgroupId, assignableUsers, initialAssigneeIds, onSa
             const token = localStorage.getItem('authToken');
             const response = await fetch(`/api/files/upload/${task.id}`, {
                 method: 'POST',
-                headers: {
-                    'Authorization': token ? `Bearer ${token}` : '',
-                },
+                headers: { Authorization: token ? `Bearer ${token}` : '' },
                 body: formData,
             });
             if (!response.ok) throw new Error('Upload failed');
@@ -106,6 +115,13 @@ const TaskModal = ({ task, subgroupId, assignableUsers, initialAssigneeIds, onSa
             e.target.value = '';
         }
     };
+
+    const handleDeleteClick = () => setShowDeleteConfirm(true);
+    const handleConfirmDelete = () => {
+        if (task && onDeleteTask) onDeleteTask(task.id);
+        setShowDeleteConfirm(false);
+    };
+    const handleCancelDelete = () => setShowDeleteConfirm(false);
 
     const customHeader = ({ date, changeYear, changeMonth, decreaseMonth, increaseMonth, prevMonthButtonDisabled, nextMonthButtonDisabled }) => (
         <div className="custom-datepicker-header">
@@ -209,6 +225,14 @@ const TaskModal = ({ task, subgroupId, assignableUsers, initialAssigneeIds, onSa
                             <option value="3">Высокая</option>
                         </select>
                     </div>
+                    {task && task.createdBy && (
+                        <div className="form-group">
+                            <label className="form-label">Создатель</label>
+                            <div className="form-input" style={{ background: '#f8fafc' }}>
+                                <i className="fas fa-user"></i> {task.createdBy.fullName}
+                            </div>
+                        </div>
+                    )}
                     <fieldset className="form-group">
                         <legend className="form-label"><i className="fas fa-user-friends"></i> Исполнители (только участники текущей подгруппы)</legend>
                         <div className="assignees-checkbox-list">
@@ -244,16 +268,28 @@ const TaskModal = ({ task, subgroupId, assignableUsers, initialAssigneeIds, onSa
                             </div>
                         </div>
                     )}
-                    <div className="modal-actions">
+                    <div className="modal-actions" style={{ display: 'flex', gap: '12px', justifyContent: 'center', marginTop: '24px' }}>
                         <button type="button" className="btn btn--secondary" onClick={onClose}>
                             <i className="fas fa-times"></i> Отмена
                         </button>
-                        <button type="submit" className="btn">
+                        {task && !isMyTasksGroup && (
+                            <button type="button" className="btn btn--danger" onClick={handleDeleteClick}>
+                                <i className="fas fa-trash-alt"></i> Удалить задачу
+                            </button>
+                        )}
+                        <button type="submit" className="btn" disabled={isSaving}>
                             <i className="fas fa-save"></i> Сохранить
                         </button>
                     </div>
                 </form>
             </div>
+            <ConfirmModal
+                isOpen={showDeleteConfirm}
+                title="Удаление задачи"
+                message="Вы действительно хотите удалить эту задачу? Это действие необратимо."
+                onConfirm={handleConfirmDelete}
+                onCancel={handleCancelDelete}
+            />
         </div>
     );
 };

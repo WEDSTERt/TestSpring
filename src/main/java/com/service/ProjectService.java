@@ -4,6 +4,7 @@ import com.entity.*;
 import com.repository.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
 import java.util.List;
 import java.util.Optional;
 
@@ -13,13 +14,16 @@ public class ProjectService {
     private final ProjectRepository projectRepository;
     private final UserRepository userRepository;
     private final ProjectMemberRepository projectMemberRepository;
+    private final TaskService taskService; // для удаления файлов
 
     public ProjectService(ProjectRepository projectRepository,
                           UserRepository userRepository,
-                          ProjectMemberRepository projectMemberRepository) {
+                          ProjectMemberRepository projectMemberRepository,
+                          TaskService taskService) {
         this.projectRepository = projectRepository;
         this.userRepository = userRepository;
         this.projectMemberRepository = projectMemberRepository;
+        this.taskService = taskService;
     }
 
     @Transactional
@@ -28,7 +32,6 @@ public class ProjectService {
                 .orElseThrow(() -> new RuntimeException("Owner user not found"));
         Project project = new Project(name, owner);
         project = projectRepository.save(project);
-        // Автоматически добавляем владельца как участника с ролью OWNER
         addProjectMember(project.getId(), ownerUserId, RoleProject.OWNER);
         return project;
     }
@@ -43,11 +46,18 @@ public class ProjectService {
 
     @Transactional
     public boolean deleteProject(Long id) {
-        if (projectRepository.existsById(id)) {
-            projectRepository.deleteById(id);
-            return true;
+        Project project = projectRepository.findById(id).orElse(null);
+        if (project == null) return false;
+
+        // Удаляем файлы всех задач проекта
+        for (Subgroup subgroup : project.getSubgroups()) {
+            for (Task task : subgroup.getTasks()) {
+                taskService.deleteAttachmentsFiles(task);
+            }
         }
-        return false;
+
+        projectRepository.delete(project);
+        return true;
     }
 
     public Optional<Project> findById(Long id) {
@@ -68,7 +78,6 @@ public class ProjectService {
                 .orElseThrow(() -> new RuntimeException("Project not found"));
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
-        // Проверить, нет ли уже такого членства
         if (projectMemberRepository.existsByProjectIdAndUserId(projectId, userId)) {
             throw new RuntimeException("User already member of this project");
         }

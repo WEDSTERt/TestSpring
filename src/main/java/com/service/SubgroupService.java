@@ -4,6 +4,7 @@ import com.entity.*;
 import com.repository.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
 import java.util.List;
 import java.util.Optional;
 
@@ -14,15 +15,18 @@ public class SubgroupService {
     private final ProjectRepository projectRepository;
     private final UserRepository userRepository;
     private final SubgroupMemberRepository subgroupMemberRepository;
+    private final TaskService taskService; // для удаления файлов
 
     public SubgroupService(SubgroupRepository subgroupRepository,
                            ProjectRepository projectRepository,
                            UserRepository userRepository,
-                           SubgroupMemberRepository subgroupMemberRepository) {
+                           SubgroupMemberRepository subgroupMemberRepository,
+                           TaskService taskService) {
         this.subgroupRepository = subgroupRepository;
         this.projectRepository = projectRepository;
         this.userRepository = userRepository;
         this.subgroupMemberRepository = subgroupMemberRepository;
+        this.taskService = taskService;
     }
 
     @Transactional
@@ -52,11 +56,16 @@ public class SubgroupService {
 
     @Transactional
     public boolean deleteSubgroup(Long id) {
-        if (subgroupRepository.existsById(id)) {
-            subgroupRepository.deleteById(id);
-            return true;
+        Subgroup subgroup = subgroupRepository.findById(id).orElse(null);
+        if (subgroup == null) return false;
+
+        // Удаляем файлы всех задач подгруппы
+        for (Task task : subgroup.getTasks()) {
+            taskService.deleteAttachmentsFiles(task);
         }
-        return false;
+
+        subgroupRepository.delete(subgroup);
+        return true;
     }
 
     public Optional<Subgroup> findById(Long id) {
@@ -64,7 +73,6 @@ public class SubgroupService {
     }
 
     public List<Subgroup> findSubgroupsByProject(Long projectId) {
-        // Используем метод с JOIN FETCH, чтобы загрузить members
         return subgroupRepository.findByProjectIdWithMembers(projectId);
     }
 

@@ -49,13 +49,7 @@ const ProjectSettings = () => {
     const canManage = isOwner || currentMember?.role === 'ADMIN' || currentMember?.role === 'OWNER';
     if (!canManage) return <div className="message-error">У вас нет прав на управление этим проектом.</div>;
 
-    const handleClose = () => {
-        if (location.state?.from) {
-            navigate(location.state.from);
-        } else {
-            navigate('/');
-        }
-    };
+
 
     const handleUpdateName = async () => {
         if (!newProjectName.trim()) return;
@@ -126,7 +120,7 @@ const ProjectSettings = () => {
 
     return (
         <div style={{ position: 'relative' }}>
-            <button className="modal-close--settings" onClick={handleClose}>✕</button>
+            <button className="modal-close--settings" onClick={() => navigate(-1)}>✕</button>
             <h2><i className="fas fa-cog"></i> Настройки проекта</h2>
             <div className="card">
                 <h3><i className="fas fa-pen"></i> Основное</h3>
