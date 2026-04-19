@@ -23,10 +23,18 @@ const KanbanBoard = () => {
     const [deleteConfirm, setDeleteConfirm] = useState({ isOpen: false, taskId: null });
     const [initialAssigneeIds, setInitialAssigneeIds] = useState([]);
     const [isCreatingTask, setIsCreatingTask] = useState(false);
+    const [showMobileGroups, setShowMobileGroups] = useState(false);
+    const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
 
     useEffect(() => {
         if (!projectId) navigate('/');
     }, [projectId, navigate]);
+
+    useEffect(() => {
+        const handleResize = () => setIsMobile(window.innerWidth <= 768);
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
 
     const { loading: projectLoading, data: projectData, refetch: refetchProject } = useQuery(GET_PROJECT_DETAILS, {
         variables: { projectId },
@@ -83,6 +91,7 @@ const KanbanBoard = () => {
     const handleSelectSubgroup = (subgroupId) => {
         setActiveSubgroupId(subgroupId);
         setSearchParams({ projectId, subgroupId });
+        if (isMobile) setShowMobileGroups(false);
     };
 
     if (projectLoading) return <div className="loading">Загрузка проекта...</div>;
@@ -148,22 +157,16 @@ const KanbanBoard = () => {
     const assignableUsers = targetSubgroupForAssign?.members || [];
 
     const handleCreateTask = () => {
-        if (isCreatingTask) return; // защита от повторного клика
+        if (isCreatingTask) return;
         if (!activeSubgroupId) {
             alert('Сначала выберите группу');
             return;
         }
         setIsCreatingTask(true);
         setEditingTask(null);
-        let ids = [];
-        if (activeSubgroupId === 'my-tasks') {
-            ids = [user.id];
-        } else {
-            const targetGroup = realSubgroups.find(g => g.id === activeSubgroupId);
-            if (targetGroup && targetGroup.members) {
-                ids = targetGroup.members.filter(m => m.role === 'LEADER').map(m => m.userId);
-            }
-        }
+        setInitialAssigneeIds([]); // всегда пустой массив – ни один чекбокс не выбран
+        setShowTaskModal(true);
+        setIsCreatingTask(false);
         setInitialAssigneeIds(ids);
         setShowTaskModal(true);
         setIsCreatingTask(false);
@@ -272,18 +275,26 @@ const KanbanBoard = () => {
 
     return (
         <div className="kanban-layout">
-            <SubgroupsPanel
-                projectId={projectId}
-                activeSubgroupId={activeSubgroupId}
-                onSelectSubgroup={handleSelectSubgroup}
-                isOwner={isOwner}
-                projectMembers={projectMembers}
-                onRefreshProject={refetchProject}
-            />
+            {!isMobile && (
+                <SubgroupsPanel
+                    projectId={projectId}
+                    activeSubgroupId={activeSubgroupId}
+                    onSelectSubgroup={handleSelectSubgroup}
+                    isOwner={isOwner}
+                    projectMembers={projectMembers}
+                    onRefreshProject={refetchProject}
+                />
+            )}
+
             <div className="kanban-container">
                 <div className="kanban-header">
                     <div className="kanban-title-area">
                         <h2 className="kanban-title"><i className="fas fa-chalkboard"></i> {project.name}</h2>
+                        {isMobile && (
+                            <button className="mobile-groups-btn" onClick={() => setShowMobileGroups(true)}>
+                                <i className="fas fa-bars"></i> Группы
+                            </button>
+                        )}
                         {activeSubgroupId !== 'my-tasks' && (
                             <button className="btn" onClick={handleCreateTask} disabled={isCreatingTask}>
                                 + Новая задача
@@ -308,7 +319,12 @@ const KanbanBoard = () => {
                                 <div className="kanban-task-list">
                                     {tasksByStatus[status].map((task) => (
                                         <div key={task.id} className="task-card" draggable onDragStart={(e) => handleDragStart(e, task.id, status)} onClick={() => handleEditTask(task)}>
-                                            <div className="task-title">{task.title}</div>
+                                            <div className="task-title">
+                                                <span>{task.title}</span>
+                                                {task.attachments && task.attachments.length > 0 && (
+                                                    <i className="fas fa-paperclip attachment-icon"></i>
+                                                )}
+                                            </div>
                                             <div className="task-meta" />
                                             <div className="task-bottom-row">
                                                 <div className={`task-priority priority-${task.value || 2}`}>
@@ -339,6 +355,7 @@ const KanbanBoard = () => {
                     </div>
                 )}
             </div>
+
             {showTaskModal && (
                 <TaskModal
                     task={editingTask}
@@ -348,9 +365,11 @@ const KanbanBoard = () => {
                     onSave={handleSaveTask}
                     onDeleteTask={handleDeleteTaskFromModal}
                     isMyTasksGroup={activeSubgroupId === 'my-tasks'}
+                    isCreator={editingTask?.createdBy?.id === user.id}
                     onClose={handleCloseTaskModal}
                 />
             )}
+
             <ConfirmModal
                 isOpen={deleteConfirm.isOpen}
                 title="Удаление задачи"
@@ -358,6 +377,21 @@ const KanbanBoard = () => {
                 onConfirm={confirmDeleteTask}
                 onCancel={() => setDeleteConfirm({ isOpen: false, taskId: null })}
             />
+
+            {isMobile && showMobileGroups && (
+                <div className="mobile-groups-modal" onClick={() => setShowMobileGroups(false)}>
+                    <div onClick={(e) => e.stopPropagation()}>
+                        <SubgroupsPanel
+                            projectId={projectId}
+                            activeSubgroupId={activeSubgroupId}
+                            onSelectSubgroup={handleSelectSubgroup}
+                            isOwner={isOwner}
+                            projectMembers={projectMembers}
+                            onRefreshProject={refetchProject}
+                        />
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

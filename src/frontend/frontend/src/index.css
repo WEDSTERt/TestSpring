@@ -521,6 +521,14 @@ body {
   font-weight: 600;
   margin-bottom: 8px;
   font-size: 0.95rem;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+.attachment-icon {
+  font-size: 0.7rem;
+  opacity: 0.7;
 }
 .task-meta {
   display: flex;
@@ -757,4 +765,257 @@ fieldset {
 .custom-datepicker-header select {
   padding: 4px;
   border-radius: 8px;
+}
+
+/* ============================================
+   Адаптация для мобильных устройств
+   ============================================ */
+@media (max-width: 768px) {
+  body {
+    padding: 10px;
+  }
+
+  .app-navbar {
+    flex-wrap: wrap;
+    padding: 8px 12px;
+    gap: 8px;
+    border-radius: 32px;
+    margin-bottom: 16px;
+  }
+
+  .app-logo {
+    font-size: 1rem;
+    flex: 1;
+  }
+
+  .app-nav-links {
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+
+  .app-nav-links a {
+    font-size: 0.85rem;
+    padding: 4px 0;
+  }
+
+  .app-user-info {
+    font-size: 0.75rem;
+    padding: 4px 8px;
+  }
+
+  .btn {
+    padding: 6px 12px;
+    font-size: 0.85rem;
+  }
+
+  .btn--small {
+    padding: 4px 8px;
+    font-size: 0.75rem;
+  }
+
+  .card {
+    padding: 16px;
+  }
+
+  .grid-2 {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .project-card {
+    padding: 16px;
+  }
+
+  .project-card h3 {
+    font-size: 1.2rem;
+  }
+
+  .project-card .flex-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .project-card .flex-row button {
+    width: 100%;
+    justify-content: center;
+    font-size: 1rem;
+    padding: 8px 12px;
+  }
+
+  /* Канбан-доска: вертикальное расположение колонок */
+  .kanban-layout {
+    flex-direction: column;
+  }
+
+  .groups-panel {
+    display: none;
+  }
+
+  .kanban-container {
+    overflow-x: visible;
+  }
+
+  .kanban-board {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    width: 100%;
+  }
+
+  .kanban-column {
+    width: 100%;
+    max-width: 100%;
+    min-width: auto;
+  }
+
+  .kanban-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .kanban-title-area {
+    justify-content: space-between;
+  }
+
+  .kanban-title {
+    font-size: 1.4rem;
+  }
+
+  /* Мобильная кнопка для показа групп */
+  .mobile-groups-btn {
+    display: inline-flex;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    border-radius: 30px;
+    padding: 6px 12px;
+    font-size: 0.85rem;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+  }
+
+  .mobile-groups-btn i {
+    font-size: 1rem;
+  }
+
+  /* Модальное окно для групп на мобильных */
+  .mobile-groups-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 10000;
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-end;
+  }
+
+  .mobile-groups-modal .groups-panel {
+    display: block;
+    width: 80%;
+    max-width: 300px;
+    height: 100%;
+    margin: 0;
+    border-radius: 0;
+    background: white;
+    overflow-y: auto;
+    box-shadow: -2px 0 8px rgba(0,0,0,0.1);
+  }
+
+  /* Модальные окна – ограничение высоты и прокрутка */
+  .modal-content {
+    width: 95%;
+    max-height: 90vh;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 16px;
+    word-break: break-word;
+  }
+
+  .modal-close {
+    top: 12px;
+    right: 12px;
+  }
+
+  .form-input, .form-select, .form-textarea {
+    padding: 8px 12px;
+  }
+
+  .assignees-checkbox-list {
+    max-height: 150px;
+    overflow-x: hidden;
+  }
+
+  .task-card {
+    padding: 10px;
+  }
+
+  .task-title {
+    font-size: 0.9rem;
+  }
+
+  /* Расположение важности и времени: важность слева, время справа */
+  .task-bottom-row {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+  }
+  .task-priority {
+    order: 1;
+  }
+  .task-date {
+    order: 2;
+  }
+
+  /* Настройки аккаунта – уменьшение текста */
+  .account-settings-card {
+    font-size: 0.9rem;
+  }
+  .account-settings-card .form-label {
+    font-size: 0.85rem;
+  }
+  .account-settings-card .form-input {
+    font-size: 0.9rem;
+    padding: 8px 10px;
+  }
+
+  .task-date {
+    font-size: 0.65rem;
+  }
+
+  /* Аккаунт настройки */
+  .account-settings-container {
+    min-height: auto;
+    padding: 10px;
+  }
+}
+
+/* Для очень маленьких экранов (до 480px) */
+@media (max-width: 480px) {
+  .app-navbar {
+    flex-direction: column;
+    align-items: stretch;
+    border-radius: 20px;
+  }
+
+  .app-logo {
+    text-align: center;
+    margin-bottom: 4px;
+  }
+
+  .app-nav-links {
+    justify-content: center;
+  }
+
+  .app-nav-links a,
+  .app-user-info,
+  .btn--small {
+    font-size: 0.7rem;
+  }
 }

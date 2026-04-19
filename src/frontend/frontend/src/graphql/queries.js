@@ -127,6 +127,29 @@ export const GET_SUBGROUPS_BY_PROJECT = gql`
     }
 `;
 
+
+export const GET_USERS = gql`
+  query GetUsers($limit: Int, $offset: Int) {
+    users(limit: $limit, offset: $offset) {
+      id
+      fullName
+      email
+    }
+  }
+`;
+
+
+export const GET_TASK_ATTACHMENTS = gql`
+  query GetTaskAttachments($taskId: ID!) {
+    taskAttachments(taskId: $taskId) {
+      id
+      fileName
+      fileType
+      fileSize
+      downloadUrl
+    }
+  }
+`;
 export const GET_TASKS_BY_SUBGROUP = gql`
     query GetTasksBySubgroup($subgroupId: ID!) {
         tasksBySubgroup(subgroupId: $subgroupId) {
@@ -138,17 +161,9 @@ export const GET_TASKS_BY_SUBGROUP = gql`
             value
             createdBy { id fullName }
             assignees { id fullName }
+            attachments { id }
         }
     }
-`;
-export const GET_USERS = gql`
-  query GetUsers($limit: Int, $offset: Int) {
-    users(limit: $limit, offset: $offset) {
-      id
-      fullName
-      email
-    }
-  }
 `;
 
 export const GET_TASKS_BY_ASSIGNEE = gql`
@@ -164,17 +179,7 @@ export const GET_TASKS_BY_ASSIGNEE = gql`
             assignees { id fullName }
             subgroupId
             subgroup { id name }
+            attachments { id }
         }
     }
-`;
-export const GET_TASK_ATTACHMENTS = gql`
-  query GetTaskAttachments($taskId: ID!) {
-    taskAttachments(taskId: $taskId) {
-      id
-      fileName
-      fileType
-      fileSize
-      downloadUrl
-    }
-  }
 `;

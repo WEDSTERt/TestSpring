@@ -1,12 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
-import { useQuery } from '@apollo/client';
+import { useQuery, useMutation } from '@apollo/client';
 import { GET_TASK_ATTACHMENTS } from '../graphql/queries';
+import { UPDATE_TASK } from '../graphql/mutations';
 import AttachmentList from './AttachmentList';
 import ConfirmModal from './ConfirmModal';
 
-const TaskModal = ({ task, subgroupId, assignableUsers, initialAssigneeIds, onSave, onDeleteTask, isMyTasksGroup, onClose }) => {
+const TaskModal = ({
+                       task,
+                       subgroupId,
+                       assignableUsers,
+                       initialAssigneeIds,
+                       onSave,
+                       onDeleteTask,
+                       isMyTasksGroup,
+                       isCreator,
+                       onClose
+                   }) => {
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
     const [dueDate, setDueDate] = useState(null);
@@ -15,15 +26,21 @@ const TaskModal = ({ task, subgroupId, assignableUsers, initialAssigneeIds, onSa
     const [assigneeIds, setAssigneeIds] = useState([]);
     const [uploading, setUploading] = useState(false);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-    const users = assignableUsers || [];
     const [isSaving, setIsSaving] = useState(false);
+    const [isEditing, setIsEditing] = useState(false);
+
+    const users = assignableUsers || [];
+
     const { data: attachmentsData, refetch: refetchAttachments } = useQuery(GET_TASK_ATTACHMENTS, {
         variables: { taskId: task?.id },
         skip: !task?.id,
     });
 
+    const [updateTask] = useMutation(UPDATE_TASK);
+
     useEffect(() => {
         if (task) {
+            // Существующая задача – заполняем поля и начинаем в режиме просмотра
             setTitle(task.title || '');
             setDescription(task.description || '');
             setDueDate(task.dueDate ? new Date(task.dueDate) : null);
@@ -37,15 +54,35 @@ const TaskModal = ({ task, subgroupId, assignableUsers, initialAssigneeIds, onSa
             setStatus(rawStatus === 'TODO' || rawStatus === 'IN_PROGRESS' || rawStatus === 'REVIEW' ? rawStatus : 'TODO');
             setPriority(task.value || 2);
             setAssigneeIds(task.assignees?.map(a => a.id) || []);
+            setIsEditing(false); // режим просмотра
         } else {
+            // Новая задача – режим редактирования
             setTitle('');
             setDescription('');
             setDueDate(null);
             setStatus('TODO');
             setPriority(2);
             setAssigneeIds(initialAssigneeIds || []);
+            setIsEditing(true);
         }
     }, [task, initialAssigneeIds]);
+
+    const handleStatusChange = async (newStatus) => {
+        if (!task) return;
+        try {
+            await updateTask({
+                variables: {
+                    id: task.id,
+                    status: newStatus,
+                },
+            });
+            setStatus(newStatus);
+            if (onSave) onSave({ status: newStatus });
+        } catch (err) {
+            console.error('Ошибка обновления статуса:', err);
+            alert('Ошибка обновления статуса');
+        }
+    };
 
     const setCurrentDateTime = () => {
         setDueDate(new Date());
@@ -76,7 +113,6 @@ const TaskModal = ({ task, subgroupId, assignableUsers, initialAssigneeIds, onSa
                 value: parseInt(priority),
                 assigneeIds,
             });
-            // onSave уже закрывает модалку, но нам нужно вызвать onClose для сброса флага
             onClose();
         } catch (err) {
             console.error(err);
@@ -140,6 +176,85 @@ const TaskModal = ({ task, subgroupId, assignableUsers, initialAssigneeIds, onSa
         </div>
     );
 
+    // Режим просмотра – только для существующей задачи, когда isEditing === false
+    if (task && !isEditing) {
+        return (
+            <div className="modal-overlay" onClick={onClose}>
+                <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                    <button className="modal-close" onClick={onClose}>✕</button>
+                    <h3>Просмотр задачи</h3>
+                    <div className="form-group">
+                        <label className="form-label">Название</label>
+                        <div className="form-input" style={{ background: '#f8fafc' }}>{task.title}</div>
+                    </div>
+                    <div className="form-group">
+                        <label className="form-label">Описание</label>
+                        <div className="form-input" style={{ background: '#f8fafc', whiteSpace: 'pre-wrap' }}>{task.description || '—'}</div>
+                    </div>
+                    <div className="form-group">
+                        <label className="form-label">Дедлайн (дата и время)</label>
+                        <div className="form-input" style={{ background: '#f8fafc' }}>
+                            {task.dueDate ? new Date(task.dueDate).toLocaleString() : '—'}
+                        </div>
+                    </div>
+                    <div className="form-group">
+                        <label className="form-label">Статус</label>
+                        <select
+                            className="form-select"
+                            value={status}
+                            onChange={(e) => handleStatusChange(e.target.value)}
+                        >
+                            <option value="TODO">Создано</option>
+                            <option value="IN_PROGRESS">В разработке</option>
+                            <option value="REVIEW">Выполнено</option>
+                        </select>
+                    </div>
+                    <div className="form-group">
+                        <label className="form-label">Важность</label>
+                        <div className="form-input" style={{ background: '#f8fafc' }}>
+                            {priority === 1 && '🔵 Низкая'}
+                            {priority === 2 && '🟡 Средняя'}
+                            {priority === 3 && '🔴 Высокая'}
+                        </div>
+                    </div>
+                    {task.createdBy && (
+                        <div className="form-group">
+                            <label className="form-label">Создатель</label>
+                            <div className="form-input" style={{ background: '#f8fafc' }}>
+                                <i className="fas fa-user"></i> {task.createdBy.fullName}
+                            </div>
+                        </div>
+                    )}
+                    <div className="form-group">
+                        <label className="form-label">Исполнители</label>
+                        <div className="form-input" style={{ background: '#f8fafc' }}>
+                            {users.filter(u => assigneeIds.includes(u.userId)).map(u => u.user?.fullName).join(', ') || '—'}
+                        </div>
+                    </div>
+                    {task && (
+                        <div className="form-group">
+                            <AttachmentList
+                                attachments={attachmentsData?.taskAttachments || []}
+                                onDelete={refetchAttachments}
+                            />
+                        </div>
+                    )}
+                    <div className="modal-actions" style={{ display: 'flex', gap: '12px', justifyContent: 'center', marginTop: '24px' }}>
+                        {isCreator && (
+                            <button type="button" className="btn" onClick={() => setIsEditing(true)}>
+                                <i className="fas fa-edit"></i> Редактировать
+                            </button>
+                        )}
+                        <button type="button" className="btn btn--secondary" onClick={onClose}>
+                            <i className="fas fa-times"></i> Закрыть
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    // Режим редактирования (для новой задачи или когда isEditing === true)
     return (
         <div className="modal-overlay" onClick={onClose}>
             <div className="modal-content" onClick={(e) => e.stopPropagation()}>
@@ -269,9 +384,11 @@ const TaskModal = ({ task, subgroupId, assignableUsers, initialAssigneeIds, onSa
                         </div>
                     )}
                     <div className="modal-actions" style={{ display: 'flex', gap: '12px', justifyContent: 'center', marginTop: '24px' }}>
-                        <button type="button" className="btn btn--secondary" onClick={onClose}>
-                            <i className="fas fa-times"></i> Отмена
-                        </button>
+                        {task && (
+                            <button type="button" className="btn btn--secondary" onClick={() => setIsEditing(false)}>
+                                <i className="fas fa-arrow-left"></i> Назад
+                            </button>
+                        )}
                         {task && !isMyTasksGroup && (
                             <button type="button" className="btn btn--danger" onClick={handleDeleteClick}>
                                 <i className="fas fa-trash-alt"></i> Удалить задачу
