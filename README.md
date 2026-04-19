@@ -42,7 +42,7 @@
 
 ### 1. Клонирование репозитория
 ```bash
-git clone https://github.com/your-repo/kanban-docky.git
+git clone https://github.com/WEDSTERt/TestSpring
 cd kanban-docky
 ```
 
