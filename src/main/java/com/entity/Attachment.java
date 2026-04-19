@@ -1,6 +1,8 @@
 package com.entity;
 
 import jakarta.persistence.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import java.time.OffsetDateTime;
 
 @Entity
@@ -20,15 +22,15 @@ public class Attachment {
     @Column(name = "file_size")
     private Long fileSize;
 
-    @Column(name = "storage_path", nullable = false)
-    private String storagePath;
+    @Lob
+    @JdbcTypeCode(SqlTypes.VARBINARY)
+    @Column(name = "file_data", nullable = false, columnDefinition = "bytea")
+    private byte[] fileData;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "task_id", nullable = false)
     private Task task;
 
-    @Column(name = "created_at", insertable = false, updatable = false)
-    private OffsetDateTime createdAt;
 
     // Геттеры и сеттеры
     public Long getId() { return id; }
@@ -39,10 +41,8 @@ public class Attachment {
     public void setFileType(String fileType) { this.fileType = fileType; }
     public Long getFileSize() { return fileSize; }
     public void setFileSize(Long fileSize) { this.fileSize = fileSize; }
-    public String getStoragePath() { return storagePath; }
-    public void setStoragePath(String storagePath) { this.storagePath = storagePath; }
+    public byte[] getFileData() { return fileData; }
+    public void setFileData(byte[] fileData) { this.fileData = fileData; }
     public Task getTask() { return task; }
     public void setTask(Task task) { this.task = task; }
-    public OffsetDateTime getCreatedAt() { return createdAt; }
-    public void setCreatedAt(OffsetDateTime createdAt) { this.createdAt = createdAt; }
 }

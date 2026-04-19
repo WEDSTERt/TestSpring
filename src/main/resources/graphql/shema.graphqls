@@ -92,7 +92,6 @@ type Attachment {
     fileName: String!
     fileType: String
     fileSize: Int
-    createdAt: DateTime!
     downloadUrl: String
 }
 

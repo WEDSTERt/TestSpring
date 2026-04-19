@@ -174,7 +174,6 @@ export const GET_TASK_ATTACHMENTS = gql`
       fileName
       fileType
       fileSize
-      createdAt
       downloadUrl
     }
   }

@@ -2,17 +2,14 @@ package com.service;
 
 import com.entity.*;
 import com.repository.*;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.nio.file.*;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 
 @Service
 public class TaskService {
@@ -21,9 +18,6 @@ public class TaskService {
     private final SubgroupRepository subgroupRepository;
     private final UserRepository userRepository;
     private final AttachmentRepository attachmentRepository;
-
-    @Value("${app.upload.dir:./uploads}")
-    private String uploadDir;
 
     public TaskService(TaskRepository taskRepository,
                        SubgroupRepository subgroupRepository,
@@ -75,25 +69,11 @@ public class TaskService {
 
     @Transactional
     public boolean deleteTask(Long id) {
-        Task task = taskRepository.findById(id).orElse(null);
-        if (task == null) return false;
-
-        // Удаляем связанные файлы с диска
-        deleteAttachmentsFiles(task);
-
-        taskRepository.delete(task);
-        return true;
-    }
-
-    // Вспомогательный метод для удаления файлов задачи
-    public void deleteAttachmentsFiles(Task task) {
-        for (Attachment att : task.getAttachments()) {
-            try {
-                Files.deleteIfExists(Paths.get(att.getStoragePath()));
-            } catch (IOException e) {
-                System.err.println("Failed to delete file: " + att.getStoragePath());
-            }
+        if (taskRepository.existsById(id)) {
+            taskRepository.deleteById(id);
+            return true;
         }
+        return false;
     }
 
     public Optional<Task> findById(Long id) {
@@ -141,30 +121,24 @@ public class TaskService {
         return taskRepository.save(task);
     }
 
-    // ----- ВЛОЖЕНИЯ -----
+    // ----- ВЛОЖЕНИЯ (хранятся в БД) -----
     @Transactional
     public Attachment addAttachment(Long taskId, MultipartFile file) throws IOException {
         Task task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new RuntimeException("Task not found"));
-        String originalFileName = file.getOriginalFilename();
-        String safeFileName = UUID.randomUUID().toString() + "_" + originalFileName;
-        Path targetPath = Paths.get(uploadDir, safeFileName);
-        Files.createDirectories(targetPath.getParent());
-        Files.copy(file.getInputStream(), targetPath, StandardCopyOption.REPLACE_EXISTING);
         Attachment attachment = new Attachment();
-        attachment.setFileName(originalFileName);
+        attachment.setFileName(file.getOriginalFilename());
         attachment.setFileType(file.getContentType());
         attachment.setFileSize(file.getSize());
-        attachment.setStoragePath(targetPath.toString());
+        attachment.setFileData(file.getBytes());
         attachment.setTask(task);
         return attachmentRepository.save(attachment);
     }
 
-    public byte[] getAttachmentContent(Long attachmentId) throws IOException {
+    public byte[] getAttachmentContent(Long attachmentId) {
         Attachment attachment = attachmentRepository.findById(attachmentId)
                 .orElseThrow(() -> new RuntimeException("Attachment not found"));
-        Path path = Paths.get(attachment.getStoragePath());
-        return Files.readAllBytes(path);
+        return attachment.getFileData();
     }
 
     public Attachment getAttachmentById(Long attachmentId) {
@@ -173,11 +147,10 @@ public class TaskService {
     }
 
     @Transactional
-    public void deleteAttachment(Long attachmentId) throws IOException {
-        Attachment attachment = attachmentRepository.findById(attachmentId)
-                .orElseThrow(() -> new RuntimeException("Attachment not found"));
-        Files.deleteIfExists(Paths.get(attachment.getStoragePath()));
-        attachmentRepository.delete(attachment);
+    public void deleteAttachment(Long attachmentId) {
+        if (attachmentRepository.existsById(attachmentId)) {
+            attachmentRepository.deleteById(attachmentId);
+        }
     }
 
     public List<Attachment> getAttachmentsByTask(Long taskId) {

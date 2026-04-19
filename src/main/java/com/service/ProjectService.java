@@ -14,16 +14,13 @@ public class ProjectService {
     private final ProjectRepository projectRepository;
     private final UserRepository userRepository;
     private final ProjectMemberRepository projectMemberRepository;
-    private final TaskService taskService; // для удаления файлов
 
     public ProjectService(ProjectRepository projectRepository,
                           UserRepository userRepository,
-                          ProjectMemberRepository projectMemberRepository,
-                          TaskService taskService) {
+                          ProjectMemberRepository projectMemberRepository) {
         this.projectRepository = projectRepository;
         this.userRepository = userRepository;
         this.projectMemberRepository = projectMemberRepository;
-        this.taskService = taskService;
     }
 
     @Transactional
@@ -46,18 +43,11 @@ public class ProjectService {
 
     @Transactional
     public boolean deleteProject(Long id) {
-        Project project = projectRepository.findById(id).orElse(null);
-        if (project == null) return false;
-
-        // Удаляем файлы всех задач проекта
-        for (Subgroup subgroup : project.getSubgroups()) {
-            for (Task task : subgroup.getTasks()) {
-                taskService.deleteAttachmentsFiles(task);
-            }
+        if (projectRepository.existsById(id)) {
+            projectRepository.deleteById(id);
+            return true;
         }
-
-        projectRepository.delete(project);
-        return true;
+        return false;
     }
 
     public Optional<Project> findById(Long id) {

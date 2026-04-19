@@ -15,25 +15,21 @@ public class SubgroupService {
     private final ProjectRepository projectRepository;
     private final UserRepository userRepository;
     private final SubgroupMemberRepository subgroupMemberRepository;
-    private final TaskService taskService; // для удаления файлов
 
     public SubgroupService(SubgroupRepository subgroupRepository,
                            ProjectRepository projectRepository,
                            UserRepository userRepository,
-                           SubgroupMemberRepository subgroupMemberRepository,
-                           TaskService taskService) {
+                           SubgroupMemberRepository subgroupMemberRepository) {
         this.subgroupRepository = subgroupRepository;
         this.projectRepository = projectRepository;
         this.userRepository = userRepository;
         this.subgroupMemberRepository = subgroupMemberRepository;
-        this.taskService = taskService;
     }
 
     @Transactional
     public Subgroup createSubgroup(Long projectId, String name, Long creatorUserId) {
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new RuntimeException("Project not found"));
-        // Проверка уникальности имени
         boolean exists = subgroupRepository.findByProjectId(projectId)
                 .stream()
                 .anyMatch(s -> s.getName().equalsIgnoreCase(name));
@@ -56,16 +52,11 @@ public class SubgroupService {
 
     @Transactional
     public boolean deleteSubgroup(Long id) {
-        Subgroup subgroup = subgroupRepository.findById(id).orElse(null);
-        if (subgroup == null) return false;
-
-        // Удаляем файлы всех задач подгруппы
-        for (Task task : subgroup.getTasks()) {
-            taskService.deleteAttachmentsFiles(task);
+        if (subgroupRepository.existsById(id)) {
+            subgroupRepository.deleteById(id);
+            return true;
         }
-
-        subgroupRepository.delete(subgroup);
-        return true;
+        return false;
     }
 
     public Optional<Subgroup> findById(Long id) {
