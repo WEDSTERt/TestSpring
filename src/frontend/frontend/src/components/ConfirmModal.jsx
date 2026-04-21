@@ -1,7 +1,18 @@
 import React from 'react';
 import { createPortal } from 'react-dom';
 
-const ConfirmModal = ({ isOpen, title, message, onConfirm, onCancel }) => {
+const ConfirmModal = ({
+                          isOpen,
+                          title,
+                          message,
+                          onConfirm,
+                          onCancel,
+                          confirmText = "Удалить",
+                          confirmIcon = "fa-trash-alt",
+                          confirmStyle = "btn--danger",
+                          cancelText = "Отмена",
+                          cancelIcon = "fa-ban"
+                      }) => {
     if (!isOpen) return null;
     return createPortal(
         <div className="modal-overlay" onClick={onCancel}>
@@ -11,10 +22,10 @@ const ConfirmModal = ({ isOpen, title, message, onConfirm, onCancel }) => {
                 <p>{message || 'Вы уверены?'}</p>
                 <div className="modal-actions">
                     <button className="btn btn--secondary" onClick={onCancel}>
-                        <i className="fas fa-ban"></i> Отмена
+                        <i className={`fas ${cancelIcon}`}></i> {cancelText}
                     </button>
-                    <button className="btn btn--danger" onClick={onConfirm}>
-                        <i className="fas fa-trash-alt"></i> Удалить
+                    <button className={`btn ${confirmStyle}`} onClick={onConfirm}>
+                        <i className={`fas ${confirmIcon}`}></i> {confirmText}
                     </button>
                 </div>
             </div>

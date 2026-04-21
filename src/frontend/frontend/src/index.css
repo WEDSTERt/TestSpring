@@ -83,6 +83,7 @@ body {
   border-color: #cbd5e1;
 }
 .btn--danger {
+  flex-shrink: 0;
   background: #dc2626;
 }
 .btn--small {
@@ -756,17 +757,24 @@ fieldset {
 .attachment-item {
   display: flex;
   align-items: center;
+  justify-content: space-between; /* прижимает кнопку вправо */
   gap: 12px;
-  padding: 6px 0;
+  padding: 8px 12px;
   border-bottom: 1px solid #e2e8f0;
 }
-.attachment-link {
-  position: relative;
-  display: inline-flex;
+.attachment-info {
+  display: flex;
   align-items: center;
-  gap: 6px;
-  text-decoration: none;
-  color: #2563eb;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.attachment-link {
+  cursor: pointer;
+  color: #3b82f6;
+  max-width: 300px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .attachment-tooltip {
   position: absolute;
@@ -788,8 +796,9 @@ fieldset {
   opacity: 1;
 }
 .attachment-size {
-  font-size: 0.7rem;
   color: #64748b;
+  font-size: 0.875rem;
+  white-space: nowrap;
 }
 .attachment-upload {
   margin-top: 8px;

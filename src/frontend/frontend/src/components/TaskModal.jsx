@@ -135,7 +135,7 @@ const TaskModal = ({
         const formData = new FormData();
         formData.append('file', file);
         try {
-            const token = localStorage.getItem('authToken');
+            const token = localStorage.getItem('jwtToken');
             const response = await fetch(`/api/files/upload/${task.id}`, {
                 method: 'POST',
                 headers: { Authorization: token ? `Bearer ${token}` : '' },
